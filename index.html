@@ -21,42 +21,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .header { position: relative; z-index: 1; }
 .container { position: relative; z-index: 1; }
 
-/* REACT BITS PORT: Cubes background (vanilla, GSAP-free) */
-#cubesBg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.85; }
-#cubesBg .cubes-scene {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  column-gap: 5%;
-  row-gap: 5%;
-  perspective: 99999999px;
-  grid-auto-rows: 1fr;
-}
-#cubesBg .cube {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 1 / 1;
-  transform-style: preserve-3d;
-}
-#cubesBg .cube-face {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #120F17;
-  border: 2px dashed #8b5cf6;
-  opacity: 0.9;
-}
-#cubesBg .cube-face--top { transform: translateY(-50%) rotateX(90deg); }
-#cubesBg .cube-face--bottom { transform: translateY(50%) rotateX(-90deg); }
-#cubesBg .cube-face--left { transform: translateX(-50%) rotateY(-90deg); }
-#cubesBg .cube-face--right { transform: translateX(50%) rotateY(90deg); }
-#cubesBg .cube-face--back, #cubesBg .cube-face--front { transform: rotateY(-90deg) translateX(50%) rotateY(90deg); }
+/* REACT BITS PORT: SoftAurora background (WebGL2, z-0) */
+#softAurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#softAurora canvas { display: block; width: 100%; height: 100%; }
 
 /* REACT BITS PORT: VariableProximity title (Sofia Sans, white→indigo gradient) */
 #varprox { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 240px; min-height: 200px; pointer-events: none; overflow: hidden; margin-bottom: 0.2em; }
@@ -96,7 +63,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 </head>
 <body>
 
-<div id="cubesBg" aria-hidden="true"><div class="cubes-scene" id="cubesScene"></div></div>
+<div id="softAurora" aria-hidden="true"></div>
 
 <header class="header">
   <div id="varprox" aria-hidden="true"></div>
@@ -792,179 +759,276 @@ loadProgress();
 
 
 <script>
-/* ===== React Bits Cubes → vanilla (background, GSAP-free) ===== */
-/* Ported per react-component-porting: GSAP tweens → one rAF engine with
-   power3.out easing; useRef/useEffect → IIFE vars + init; per-cube tween state
-   {fromRx,fromRy,toRx,toRy,t0,dur}; pointer listeners on document (layer is
-   pointer-events:none so cards stay clickable); autoAnimate idle wander. */
+/* ===== React Bits SoftAurora → vanilla WebGL2 (background) ===== */
+/* Ported per react-component-porting: OGL Renderer/Program/Mesh/Triangle →
+   raw WebGL2 with a fullscreen triangle; GLSL ES 1.0 (attribute/varying/
+   gl_FragColor) upgraded to #version 300 es (in/out/outColor). Props from the
+   user's usage example used verbatim. Mouse listeners on window (the layer is
+   pointer-events:none so deck cards stay clickable). */
 (function () {
-  var scene = document.getElementById('cubesScene');
-  if (!scene) return;
-  var reduced = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
+  var container = document.getElementById('softAurora');
+  if (!container) return;
+  var canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+  var gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: false });
+  if (!gl) return;
 
-  var GRID = 8;
-  var MAX_ANGLE = 60;
-  var RADIUS = 4;
-  var ENTER_DUR = 0.3, LEAVE_DUR = 0.6;
-  var RIPPLE_COLOR = '#22d3ee';
-  var FACE_COLOR = '#120F17';
-  var RIPPLE_SPEED = 1.5;
+  // props (user's usage example, verbatim)
+  var PROPS = {
+    speed: 0.6,
+    scale: 1.5,
+    brightness: 1.0,
+    color1: [0xF7 / 255, 0xF7 / 255, 0xF7 / 255],
+    color2: [0xE1 / 255, 0x00 / 255, 0xFF / 255],
+    noiseFrequency: 3,
+    noiseAmplitude: 5.5,
+    bandHeight: 0.2,
+    bandSpread: 0.9,
+    octaveDecay: 0.2,
+    layerOffset: 0,
+    colorSpeed: 1.0,
+    mouseInfluence: 0.75
+  };
 
-  var cubes = [];       // {el, faces[], row, col, rx, ry, fromRx, fromRy, toRx, toRy, t0, dur}
-  var raf = null;
-  var userActive = false;
-  var idleTimer = null;
-  var simPos = { x: Math.random() * GRID, y: Math.random() * GRID };
-  var simTgt = { x: Math.random() * GRID, y: Math.random() * GRID };
-  var simSpeed = 0.02;
+  var VERT = `#version 300 es
+in vec2 aPos;
+out vec2 vUv;
+void main() {
+  vUv = aPos * 0.5 + 0.5;
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
 
-  function easeOutPow3(t) { return 1 - Math.pow(1 - t, 3); }
+  var FRAG = `#version 300 es
+precision highp float;
 
-  function build() {
-    var frag = document.createDocumentFragment();
-    for (var r = 0; r < GRID; r++) {
-      for (var c = 0; c < GRID; c++) {
-        var cube = document.createElement('div');
-        cube.className = 'cube';
-        cube.dataset.row = r;
-        cube.dataset.col = c;
-        var faces = [];
-        ['top', 'bottom', 'left', 'right', 'front', 'back'].forEach(function (f) {
-          var face = document.createElement('div');
-          face.className = 'cube-face cube-face--' + f;
-          cube.appendChild(face);
-          faces.push(face);
-        });
-        frag.appendChild(cube);
-        cubes.push({ el: cube, faces: faces, row: r, col: c, rx: 0, ry: 0, fromRx: 0, fromRy: 0, toRx: 0, toRy: 0, t0: 0, dur: LEAVE_DUR });
-      }
+uniform float uTime;
+uniform vec3 uResolution;
+uniform float uSpeed;
+uniform float uScale;
+uniform float uBrightness;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+uniform float uNoiseFreq;
+uniform float uNoiseAmp;
+uniform float uBandHeight;
+uniform float uBandSpread;
+uniform float uOctaveDecay;
+uniform float uLayerOffset;
+uniform float uColorSpeed;
+uniform vec2 uMouse;
+uniform float uMouseInfluence;
+uniform bool uEnableMouse;
+
+in vec2 vUv;
+out vec4 outColor;
+
+#define TAU 6.28318
+
+vec3 gradientHash(vec3 p) {
+  p = vec3(
+    dot(p, vec3(127.1, 311.7, 234.6)),
+    dot(p, vec3(269.5, 183.3, 198.3)),
+    dot(p, vec3(169.5, 283.3, 156.9))
+  );
+  vec3 h = fract(sin(p) * 43758.5453123);
+  float phi = acos(2.0 * h.x - 1.0);
+  float theta = TAU * h.y;
+  return vec3(cos(theta) * sin(phi), sin(theta) * cos(phi), cos(phi));
+}
+
+float quinticSmooth(float t) {
+  float t2 = t * t;
+  float t3 = t * t2;
+  return 6.0 * t3 * t2 - 15.0 * t2 * t2 + 10.0 * t3;
+}
+
+vec3 cosineGradient(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+  return a + b * cos(TAU * (c * t + d));
+}
+
+float perlin3D(float amplitude, float frequency, float px, float py, float pz) {
+  float x = px * frequency;
+  float y = py * frequency;
+
+  float fx = floor(x); float fy = floor(y); float fz = floor(pz);
+  float cx = ceil(x);  float cy = ceil(y);  float cz = ceil(pz);
+
+  vec3 g000 = gradientHash(vec3(fx, fy, fz));
+  vec3 g100 = gradientHash(vec3(cx, fy, fz));
+  vec3 g010 = gradientHash(vec3(fx, cy, fz));
+  vec3 g110 = gradientHash(vec3(cx, cy, fz));
+  vec3 g001 = gradientHash(vec3(fx, fy, cz));
+  vec3 g101 = gradientHash(vec3(cx, fy, cz));
+  vec3 g011 = gradientHash(vec3(fx, cy, cz));
+  vec3 g111 = gradientHash(vec3(cx, cy, cz));
+
+  float d000 = dot(g000, vec3(x - fx, y - fy, pz - fz));
+  float d100 = dot(g100, vec3(x - cx, y - fy, pz - fz));
+  float d010 = dot(g010, vec3(x - fx, y - cy, pz - fz));
+  float d110 = dot(g110, vec3(x - cx, y - cy, pz - fz));
+  float d001 = dot(g001, vec3(x - fx, y - fy, pz - cz));
+  float d101 = dot(g101, vec3(x - cx, y - fy, pz - cz));
+  float d011 = dot(g011, vec3(x - fx, y - cy, pz - cz));
+  float d111 = dot(g111, vec3(x - cx, y - cy, pz - cz));
+
+  float sx = quinticSmooth(x - fx);
+  float sy = quinticSmooth(y - fy);
+  float sz = quinticSmooth(pz - fz);
+
+  float lx00 = mix(d000, d100, sx);
+  float lx10 = mix(d010, d110, sx);
+  float lx01 = mix(d001, d101, sx);
+  float lx11 = mix(d011, d111, sx);
+
+  float ly0 = mix(lx00, lx10, sy);
+  float ly1 = mix(lx01, lx11, sy);
+
+  return amplitude * mix(ly0, ly1, sz);
+}
+
+float auroraGlow(float t, vec2 shift) {
+  vec2 uv = gl_FragCoord.xy / uResolution.y;
+  uv += shift;
+
+  float noiseVal = 0.0;
+  float freq = uNoiseFreq;
+  float amp = uNoiseAmp;
+  vec2 samplePos = uv * uScale;
+
+  for (float i = 0.0; i < 3.0; i += 1.0) {
+    noiseVal += perlin3D(amp, freq, samplePos.x, samplePos.y, t);
+    amp *= uOctaveDecay;
+    freq *= 2.0;
+  }
+
+  float yBand = uv.y * 10.0 - uBandHeight * 10.0;
+  return 0.3 * max(exp(uBandSpread * (1.0 - 1.1 * abs(noiseVal + yBand))), 0.0);
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / uResolution.xy;
+  float t = uSpeed * 0.4 * uTime;
+
+  vec2 shift = vec2(0.0);
+  if (uEnableMouse) {
+    shift = (uMouse - 0.5) * uMouseInfluence;
+  }
+
+  vec3 col = vec3(0.0);
+  col += 0.99 * auroraGlow(t, shift) * cosineGradient(uv.x + uTime * uSpeed * 0.2 * uColorSpeed, vec3(0.5), vec3(0.5), vec3(1.0), vec3(0.3, 0.20, 0.20)) * uColor1;
+  col += 0.99 * auroraGlow(t + uLayerOffset, shift) * cosineGradient(uv.x + uTime * uSpeed * 0.1 * uColorSpeed, vec3(0.5), vec3(0.5), vec3(2.0, 1.0, 0.0), vec3(0.5, 0.20, 0.25)) * uColor2;
+
+  col *= uBrightness;
+  float alpha = clamp(length(col), 0.0, 1.0);
+  outColor = vec4(col, alpha);
+}`;
+
+  function compile(type, src) {
+    var sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.error('SoftAurora shader error:', gl.getShaderInfoLog(sh));
+      return null;
     }
-    scene.appendChild(frag);
+    return sh;
   }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('SoftAurora link error:', gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
 
-  // target rotation for a cube given the cursor row/col center
-  function tiltTarget(cube, rowC, colC) {
-    var dist = Math.hypot(cube.row - rowC, cube.col - colC);
-    if (dist <= RADIUS) {
-      var pct = 1 - dist / RADIUS;
-      var angle = pct * MAX_ANGLE;
-      return { rx: -angle, ry: angle };
+  var uTime = gl.getUniformLocation(prog, 'uTime');
+  var uResolution = gl.getUniformLocation(prog, 'uResolution');
+  var uSpeed = gl.getUniformLocation(prog, 'uSpeed');
+  var uScale = gl.getUniformLocation(prog, 'uScale');
+  var uBrightness = gl.getUniformLocation(prog, 'uBrightness');
+  var uColor1 = gl.getUniformLocation(prog, 'uColor1');
+  var uColor2 = gl.getUniformLocation(prog, 'uColor2');
+  var uNoiseFreq = gl.getUniformLocation(prog, 'uNoiseFreq');
+  var uNoiseAmp = gl.getUniformLocation(prog, 'uNoiseAmp');
+  var uBandHeight = gl.getUniformLocation(prog, 'uBandHeight');
+  var uBandSpread = gl.getUniformLocation(prog, 'uBandSpread');
+  var uOctaveDecay = gl.getUniformLocation(prog, 'uOctaveDecay');
+  var uLayerOffset = gl.getUniformLocation(prog, 'uLayerOffset');
+  var uColorSpeed = gl.getUniformLocation(prog, 'uColorSpeed');
+  var uMouse = gl.getUniformLocation(prog, 'uMouse');
+  var uMouseInfluence = gl.getUniformLocation(prog, 'uMouseInfluence');
+  var uEnableMouse = gl.getUniformLocation(prog, 'uEnableMouse');
+
+  // fullscreen triangle (ogl Triangle geometry: 3 verts)
+  var triVerts = new Float32Array([-1, -1, 3, -1, -1, 3]);
+  var vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, triVerts, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  gl.uniform1f(uSpeed, PROPS.speed);
+  gl.uniform1f(uScale, PROPS.scale);
+  gl.uniform1f(uBrightness, PROPS.brightness);
+  gl.uniform3f(uColor1, PROPS.color1[0], PROPS.color1[1], PROPS.color1[2]);
+  gl.uniform3f(uColor2, PROPS.color2[0], PROPS.color2[1], PROPS.color2[2]);
+  gl.uniform1f(uNoiseFreq, PROPS.noiseFrequency);
+  gl.uniform1f(uNoiseAmp, PROPS.noiseAmplitude);
+  gl.uniform1f(uBandHeight, PROPS.bandHeight);
+  gl.uniform1f(uBandSpread, PROPS.bandSpread);
+  gl.uniform1f(uOctaveDecay, PROPS.octaveDecay);
+  gl.uniform1f(uLayerOffset, PROPS.layerOffset);
+  gl.uniform1f(uColorSpeed, PROPS.colorSpeed);
+  gl.uniform1f(uMouseInfluence, PROPS.mouseInfluence);
+  gl.uniform1i(uEnableMouse, 1);
+  gl.uniform2f(uMouse, 0.5, 0.5);
+  gl.clearColor(0, 0, 0, 0);
+
+  var currentMouse = [0.5, 0.5];
+  var targetMouse = [0.5, 0.5];
+
+  function resize() {
+    var w = container.offsetWidth, h = container.offsetHeight;
+    canvas.width = Math.max(1, Math.floor(w * Math.min(window.devicePixelRatio || 1, 1.5)));
+    canvas.height = Math.max(1, Math.floor(h * Math.min(window.devicePixelRatio || 1, 1.5)));
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform3f(uResolution, canvas.width, canvas.height, canvas.width / canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function onMouseMove(e) {
+    var rect = canvas.getBoundingClientRect();
+    targetMouse[0] = (e.clientX - rect.left) / rect.width;
+    targetMouse[1] = 1.0 - (e.clientY - rect.top) / rect.height;
+  }
+  function onMouseLeave() { targetMouse[0] = 0.5; targetMouse[1] = 0.5; }
+  window.addEventListener('mousemove', onMouseMove, { passive: true });
+  document.addEventListener('mouseleave', onMouseLeave);
+
+  function frame(time) {
+    requestAnimationFrame(frame);
+    gl.uniform1f(uTime, time * 0.001);
+    currentMouse[0] += 0.05 * (targetMouse[0] - currentMouse[0]);
+    currentMouse[1] += 0.05 * (targetMouse[1] - currentMouse[1]);
+    gl.uniform2f(uMouse, currentMouse[0], currentMouse[1]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  requestAnimationFrame(frame);
+
+  window.__softAurora = {
+    gl: gl,
+    canvas: canvas,
+    getUniform: function (name) { return gl.getUniform(prog, gl.getUniformLocation(prog, name)); },
+    drawSync: function () {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
-    return { rx: 0, ry: 0 };
-  }
-
-  function tiltAt(rowC, colC) {
-    var now = performance.now() / 1000;
-    for (var i = 0; i < cubes.length; i++) {
-      var cb = cubes[i];
-      var t = tiltTarget(cb, rowC, colC);
-      if (cb.toRx !== t.rx || cb.toRy !== t.ry) {
-        cb.fromRx = cb.rx; cb.fromRy = cb.ry;
-        cb.toRx = t.rx; cb.toRy = t.ry;
-        cb.t0 = now;
-        cb.dur = (t.rx !== 0 || t.ry !== 0) ? ENTER_DUR : LEAVE_DUR;
-      }
-    }
-  }
-
-  function resetAll() {
-    var now = performance.now() / 1000;
-    for (var i = 0; i < cubes.length; i++) {
-      var cb = cubes[i];
-      if (cb.toRx !== 0 || cb.toRy !== 0) {
-        cb.fromRx = cb.rx; cb.fromRy = cb.ry;
-        cb.toRx = 0; cb.toRy = 0;
-        cb.t0 = now; cb.dur = LEAVE_DUR;
-      }
-    }
-  }
-
-  function onPointerMove(e) {
-    userActive = true;
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(function () { userActive = false; }, 3000);
-
-    var rect = scene.getBoundingClientRect();
-    var cellW = rect.width / GRID;
-    var cellH = rect.height / GRID;
-    var colC = (e.clientX - rect.left) / cellW;
-    var rowC = (e.clientY - rect.top) / cellH;
-    tiltAt(rowC, colC);
-  }
-
-  function onPointerLeave() { resetAll(); }
-
-  // ripple: faces flash rippleColor then back, ring by ring (CSS transition + delay)
-  function onClick(e) {
-    var rect = scene.getBoundingClientRect();
-    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
-    var cellW = rect.width / GRID;
-    var cellH = rect.height / GRID;
-    var colHit = Math.floor((e.clientX - rect.left) / cellW);
-    var rowHit = Math.floor((e.clientY - rect.top) / cellH);
-
-    var baseRingDelay = 0.15, baseAnimDur = 0.3, baseHold = 0.6;
-    var spreadDelay = baseRingDelay / RIPPLE_SPEED;
-    var animDur = baseAnimDur / RIPPLE_SPEED;
-    var holdTime = baseHold / RIPPLE_SPEED;
-
-    var rings = {};
-    for (var i = 0; i < cubes.length; i++) {
-      var cb = cubes[i];
-      var dist = Math.hypot(cb.row - rowHit, cb.col - colHit);
-      var ring = Math.round(dist);
-      (rings[ring] = rings[ring] || []).push(cb);
-    }
-    Object.keys(rings).map(Number).sort(function (a, b) { return a - b; }).forEach(function (ring) {
-      var delay = ring * spreadDelay;
-      var faces = [];
-      rings[ring].forEach(function (cb) { faces = faces.concat(cb.faces); });
-      faces.forEach(function (f) {
-        f.style.transition = 'background-color ' + animDur + 's ease-out ' + delay + 's';
-        f.style.backgroundColor = RIPPLE_COLOR;
-        setTimeout(function () {
-          f.style.transition = 'background-color ' + animDur + 's ease-out';
-          f.style.backgroundColor = FACE_COLOR;
-        }, (delay + animDur + holdTime) * 1000);
-      });
-    });
-  }
-
-  function frame() {
-    var now = performance.now() / 1000;
-    if (!userActive) {
-      // idle wander
-      var pos = simPos, tgt = simTgt;
-      pos.x += (tgt.x - pos.x) * simSpeed;
-      pos.y += (tgt.y - pos.y) * simSpeed;
-      tiltAt(pos.y, pos.x);
-      if (Math.hypot(pos.x - tgt.x, pos.y - tgt.y) < 0.1) {
-        simTgt.x = Math.random() * GRID;
-        simTgt.y = Math.random() * GRID;
-      }
-    }
-    for (var i = 0; i < cubes.length; i++) {
-      var cb = cubes[i];
-      var t = Math.min(1, (now - cb.t0) / Math.max(0.001, cb.dur));
-      var e = easeOutPow3(t);
-      cb.rx = cb.fromRx + (cb.toRx - cb.fromRx) * e;
-      cb.ry = cb.fromRy + (cb.toRy - cb.fromRy) * e;
-      cb.el.style.transform = 'rotateX(' + cb.rx.toFixed(2) + 'deg) rotateY(' + cb.ry.toFixed(2) + 'deg)';
-    }
-    raf = requestAnimationFrame(frame);
-  }
-
-  function init() {
-    build();
-    document.addEventListener('pointermove', onPointerMove);
-    document.addEventListener('pointerleave', onPointerLeave);
-    document.addEventListener('click', onClick);
-    if (reduced) return; // static grid, no animation
-    raf = requestAnimationFrame(frame);
-  }
-
-  init();
-  window.__cubes = { getCount: function () { return cubes.length; }, getTransform: function (i) { return cubes[i] ? cubes[i].el.style.transform : null; } };
+  };
 })();
 
 </script>
