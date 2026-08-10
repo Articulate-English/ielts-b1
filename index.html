@@ -19,6 +19,44 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 /* REACT BITS PORT: ParticleText title */
 .header { position: relative; z-index: 1; }
 .container { position: relative; z-index: 1; }
+
+/* REACT BITS PORT: Cubes background (vanilla, GSAP-free) */
+#cubesBg { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.85; }
+#cubesBg .cubes-scene {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  column-gap: 5%;
+  row-gap: 5%;
+  perspective: 99999999px;
+  grid-auto-rows: 1fr;
+}
+#cubesBg .cube {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  transform-style: preserve-3d;
+}
+#cubesBg .cube-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #120F17;
+  border: 2px dashed #8b5cf6;
+  opacity: 0.9;
+}
+#cubesBg .cube-face--top { transform: translateY(-50%) rotateX(90deg); }
+#cubesBg .cube-face--bottom { transform: translateY(50%) rotateX(-90deg); }
+#cubesBg .cube-face--left { transform: translateX(-50%) rotateY(-90deg); }
+#cubesBg .cube-face--right { transform: translateX(50%) rotateY(90deg); }
+#cubesBg .cube-face--back, #cubesBg .cube-face--front { transform: rotateY(-90deg) translateX(50%) rotateY(90deg); }
+
 .particle-text { position: relative; display: block; width: 100%; height: 240px; min-height: 200px; overflow: hidden; touch-action: none; isolation: isolate; margin-bottom: 0.2em; font-family: 'Montserrat', sans-serif; font-weight: 900; }
 .particle-text__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .particle-text__sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -47,6 +85,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 </style>
 </head>
 <body>
+
+<div id="cubesBg" aria-hidden="true"><div class="cubes-scene" id="cubesScene"></div></div>
 
 <header class="header">
   <div class="particle-text" id="particleTitle" aria-label="IELTS Speaking B1 Practice">
@@ -906,6 +946,184 @@ loadProgress();
 </script>
 
 
+
+<script>
+/* ===== React Bits Cubes → vanilla (background, GSAP-free) ===== */
+/* Ported per react-component-porting: GSAP tweens → one rAF engine with
+   power3.out easing; useRef/useEffect → IIFE vars + init; per-cube tween state
+   {fromRx,fromRy,toRx,toRy,t0,dur}; pointer listeners on document (layer is
+   pointer-events:none so cards stay clickable); autoAnimate idle wander. */
+(function () {
+  var scene = document.getElementById('cubesScene');
+  if (!scene) return;
+  var reduced = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
+
+  var GRID = 8;
+  var MAX_ANGLE = 60;
+  var RADIUS = 4;
+  var ENTER_DUR = 0.3, LEAVE_DUR = 0.6;
+  var RIPPLE_COLOR = '#22d3ee';
+  var FACE_COLOR = '#120F17';
+  var RIPPLE_SPEED = 1.5;
+
+  var cubes = [];       // {el, faces[], row, col, rx, ry, fromRx, fromRy, toRx, toRy, t0, dur}
+  var raf = null;
+  var userActive = false;
+  var idleTimer = null;
+  var simPos = { x: Math.random() * GRID, y: Math.random() * GRID };
+  var simTgt = { x: Math.random() * GRID, y: Math.random() * GRID };
+  var simSpeed = 0.02;
+
+  function easeOutPow3(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function build() {
+    var frag = document.createDocumentFragment();
+    for (var r = 0; r < GRID; r++) {
+      for (var c = 0; c < GRID; c++) {
+        var cube = document.createElement('div');
+        cube.className = 'cube';
+        cube.dataset.row = r;
+        cube.dataset.col = c;
+        var faces = [];
+        ['top', 'bottom', 'left', 'right', 'front', 'back'].forEach(function (f) {
+          var face = document.createElement('div');
+          face.className = 'cube-face cube-face--' + f;
+          cube.appendChild(face);
+          faces.push(face);
+        });
+        frag.appendChild(cube);
+        cubes.push({ el: cube, faces: faces, row: r, col: c, rx: 0, ry: 0, fromRx: 0, fromRy: 0, toRx: 0, toRy: 0, t0: 0, dur: LEAVE_DUR });
+      }
+    }
+    scene.appendChild(frag);
+  }
+
+  // target rotation for a cube given the cursor row/col center
+  function tiltTarget(cube, rowC, colC) {
+    var dist = Math.hypot(cube.row - rowC, cube.col - colC);
+    if (dist <= RADIUS) {
+      var pct = 1 - dist / RADIUS;
+      var angle = pct * MAX_ANGLE;
+      return { rx: -angle, ry: angle };
+    }
+    return { rx: 0, ry: 0 };
+  }
+
+  function tiltAt(rowC, colC) {
+    var now = performance.now() / 1000;
+    for (var i = 0; i < cubes.length; i++) {
+      var cb = cubes[i];
+      var t = tiltTarget(cb, rowC, colC);
+      if (cb.toRx !== t.rx || cb.toRy !== t.ry) {
+        cb.fromRx = cb.rx; cb.fromRy = cb.ry;
+        cb.toRx = t.rx; cb.toRy = t.ry;
+        cb.t0 = now;
+        cb.dur = (t.rx !== 0 || t.ry !== 0) ? ENTER_DUR : LEAVE_DUR;
+      }
+    }
+  }
+
+  function resetAll() {
+    var now = performance.now() / 1000;
+    for (var i = 0; i < cubes.length; i++) {
+      var cb = cubes[i];
+      if (cb.toRx !== 0 || cb.toRy !== 0) {
+        cb.fromRx = cb.rx; cb.fromRy = cb.ry;
+        cb.toRx = 0; cb.toRy = 0;
+        cb.t0 = now; cb.dur = LEAVE_DUR;
+      }
+    }
+  }
+
+  function onPointerMove(e) {
+    userActive = true;
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () { userActive = false; }, 3000);
+
+    var rect = scene.getBoundingClientRect();
+    var cellW = rect.width / GRID;
+    var cellH = rect.height / GRID;
+    var colC = (e.clientX - rect.left) / cellW;
+    var rowC = (e.clientY - rect.top) / cellH;
+    tiltAt(rowC, colC);
+  }
+
+  function onPointerLeave() { resetAll(); }
+
+  // ripple: faces flash rippleColor then back, ring by ring (CSS transition + delay)
+  function onClick(e) {
+    var rect = scene.getBoundingClientRect();
+    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+    var cellW = rect.width / GRID;
+    var cellH = rect.height / GRID;
+    var colHit = Math.floor((e.clientX - rect.left) / cellW);
+    var rowHit = Math.floor((e.clientY - rect.top) / cellH);
+
+    var baseRingDelay = 0.15, baseAnimDur = 0.3, baseHold = 0.6;
+    var spreadDelay = baseRingDelay / RIPPLE_SPEED;
+    var animDur = baseAnimDur / RIPPLE_SPEED;
+    var holdTime = baseHold / RIPPLE_SPEED;
+
+    var rings = {};
+    for (var i = 0; i < cubes.length; i++) {
+      var cb = cubes[i];
+      var dist = Math.hypot(cb.row - rowHit, cb.col - colHit);
+      var ring = Math.round(dist);
+      (rings[ring] = rings[ring] || []).push(cb);
+    }
+    Object.keys(rings).map(Number).sort(function (a, b) { return a - b; }).forEach(function (ring) {
+      var delay = ring * spreadDelay;
+      var faces = [];
+      rings[ring].forEach(function (cb) { faces = faces.concat(cb.faces); });
+      faces.forEach(function (f) {
+        f.style.transition = 'background-color ' + animDur + 's ease-out ' + delay + 's';
+        f.style.backgroundColor = RIPPLE_COLOR;
+        setTimeout(function () {
+          f.style.transition = 'background-color ' + animDur + 's ease-out';
+          f.style.backgroundColor = FACE_COLOR;
+        }, (delay + animDur + holdTime) * 1000);
+      });
+    });
+  }
+
+  function frame() {
+    var now = performance.now() / 1000;
+    if (!userActive) {
+      // idle wander
+      var pos = simPos, tgt = simTgt;
+      pos.x += (tgt.x - pos.x) * simSpeed;
+      pos.y += (tgt.y - pos.y) * simSpeed;
+      tiltAt(pos.y, pos.x);
+      if (Math.hypot(pos.x - tgt.x, pos.y - tgt.y) < 0.1) {
+        simTgt.x = Math.random() * GRID;
+        simTgt.y = Math.random() * GRID;
+      }
+    }
+    for (var i = 0; i < cubes.length; i++) {
+      var cb = cubes[i];
+      var t = Math.min(1, (now - cb.t0) / Math.max(0.001, cb.dur));
+      var e = easeOutPow3(t);
+      cb.rx = cb.fromRx + (cb.toRx - cb.fromRx) * e;
+      cb.ry = cb.fromRy + (cb.toRy - cb.fromRy) * e;
+      cb.el.style.transform = 'rotateX(' + cb.rx.toFixed(2) + 'deg) rotateY(' + cb.ry.toFixed(2) + 'deg)';
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function init() {
+    build();
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerleave', onPointerLeave);
+    document.addEventListener('click', onClick);
+    if (reduced) return; // static grid, no animation
+    raf = requestAnimationFrame(frame);
+  }
+
+  init();
+  window.__cubes = { getCount: function () { return cubes.length; }, getTransform: function (i) { return cubes[i] ? cubes[i].el.style.transform : null; } };
+})();
+
+</script>
 
 </body>
 </html>
