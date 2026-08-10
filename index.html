@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'self'">
 <title>IELTS Speaking B1 Practice Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -14,6 +15,15 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 .header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; line-height: 1.6; }
 .level-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 1em; }
 .level-b1 { background: rgba(251, 191, 36, 0.2); color: var(--accent); border: 1px solid rgba(251, 191, 36, 0.4); }
+
+/* REACT BITS PORT: Ballpit background (WebGL2, z-0) + ParticleText title */
+#ballpitBg { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 0; pointer-events: none; opacity: 0.9; }
+.header { position: relative; z-index: 1; }
+.container { position: relative; z-index: 1; }
+.particle-text { position: relative; display: block; width: 100%; height: 240px; min-height: 200px; overflow: hidden; touch-action: none; isolation: isolate; margin-bottom: 0.2em; font-family: 'Montserrat', sans-serif; font-weight: 900; }
+.particle-text__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.particle-text__sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 768px) { .particle-text { height: 150px; min-height: 130px; } }
 .container { max-width: min(94vw, 1400px); margin: 0 auto; padding: 0 1.5em 3em; }
 .section-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 2em 0 1em; padding-bottom: 0.5em; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
 .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5em; }
@@ -39,8 +49,13 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 </head>
 <body>
 
+<canvas id="ballpitBg" aria-hidden="true"></canvas>
+
 <header class="header">
-  <h1>IELTS Speaking B1 Practice</h1>
+  <div class="particle-text" id="particleTitle" aria-label="IELTS Speaking B1 Practice">
+    <canvas aria-hidden="true"></canvas>
+    <span class="particle-text__sr">IELTS Speaking B1 Practice</span>
+  </div>
   <p>Master all three parts of the IELTS Speaking test with model answers you can reveal when ready. Track your progress as you practice.</p>
   <span class="level-badge level-b1">B1 Level</span>
 </header>
@@ -616,6 +631,646 @@ function loadProgress() {
   } catch(e) {}
 }
 loadProgress();
+</script>
+
+<script>
+/* ===== React Bits ParticleText → vanilla (title, white→indigo #ffffff/#8b5cf6) ===== */
+(function () {
+  var container = document.getElementById('particleTitle');
+  var canvas = container ? container.querySelector('canvas') : null;
+  if (!container || !canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  var TEXT = 'IELTS Speaking B1 Practice';
+  var particleSize = 2, density = 4;
+  var color = '#ffffff', highlightColor = '#8b5cf6';
+  var scatter = 180, gatherDuration = 1600, stagger = 420;
+  var pointerRepel = 40, repelRadius = 120, idleDrift = 0.7;
+  var trigger = 'mount';
+  var fontSize = 'clamp(2.2rem, 6vw, 4rem)';
+  var fontWeight = 900, fontFamily = 'inherit', glow = true;
+
+  var particles = [], animationFrame = null, resizeFrame = null, buildId = 0;
+  var gathering = false, gatherStart = 0;
+  var reducedMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
+  var width = 0, height = 0, dpr = 1;
+  var pointer = { active: false, x: 0, y: 0, smoothX: 0, smoothY: 0 };
+
+  function hexToRgb(hex) {
+    var clean = String(hex).replace('#', '').trim();
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) return null;
+    return { r: parseInt(clean.slice(0, 2), 16), g: parseInt(clean.slice(2, 4), 16), b: parseInt(clean.slice(4, 6), 16) };
+  }
+  function mixRgb(from, to, amount) {
+    return {
+      r: Math.round(from.r + (to.r - from.r) * amount),
+      g: Math.round(from.g + (to.g - from.g) * amount),
+      b: Math.round(from.b + (to.b - from.b) * amount)
+    };
+  }
+  function rgbToCss(rgb) { return 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'; }
+  function clamp(v, mn, mx) { return Math.min(Math.max(v, mn), mx); }
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+  function resolveFontSize(value, cont, weight, family) {
+    if (typeof value === 'number') return value;
+    var probe = document.createElement('span');
+    probe.textContent = 'M';
+    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;font-size:' + value + ';font-weight:' + weight + ';font-family:' + family;
+    cont.appendChild(probe);
+    var size = parseFloat(window.getComputedStyle(probe).fontSize) || 96;
+    probe.remove();
+    return size;
+  }
+
+  function waitForFonts(font) {
+    if (!('fonts' in document)) return Promise.resolve();
+    return Promise.resolve()
+      .then(function () {
+        try { return document.fonts.load(font); } catch (e) { return undefined; }
+      })
+      .then(function () { return document.fonts.ready; });
+  }
+
+  function startGather(fromScatter) {
+    if (!particles.length) return;
+    var now = performance.now();
+    var spread = reducedMotion ? 0 : scatter;
+    particles.forEach(function (p) {
+      if (fromScatter) {
+        var angle = p.seed * Math.PI * 2;
+        var distance = spread * (0.35 + p.depth * 0.75);
+        p.x = p.targetX + Math.cos(angle) * distance + (p.depth - 0.5) * spread * 0.55;
+        p.y = p.targetY + Math.sin(angle) * distance + (p.seed - 0.5) * spread * 0.55;
+      }
+      p.startX = p.x; p.startY = p.y;
+      p.delay = reducedMotion ? 0 : p.seed * stagger;
+    });
+    gatherStart = now; gathering = true;
+  }
+
+  function drawParticle(p) {
+    var size = p.size;
+    ctx.fillStyle = p.color;
+    if (size <= 2.1) { ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size); return; }
+    ctx.beginPath(); ctx.arc(p.x, p.y, size / 2, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function render(now) {
+    ctx.clearRect(0, 0, width, height);
+    if (glow && !reducedMotion) { ctx.shadowBlur = particleSize * 3; ctx.shadowColor = highlightColor; }
+    else ctx.shadowBlur = 0;
+
+    pointer.smoothX += (pointer.x - pointer.smoothX) * 0.18;
+    pointer.smoothY += (pointer.y - pointer.smoothY) * 0.18;
+
+    var complete = true;
+    particles.forEach(function (p) {
+      var baseX = p.targetX, baseY = p.targetY, progress = 1;
+      if (gathering) {
+        var local = (now - gatherStart - p.delay) / Math.max(1, reducedMotion ? 1 : gatherDuration);
+        progress = clamp(local, 0, 1);
+        var eased = easeOutCubic(progress);
+        baseX = p.startX + (p.targetX - p.startX) * eased;
+        baseY = p.startY + (p.targetY - p.startY) * eased;
+        if (progress < 1) complete = false;
+      } else if (!reducedMotion && idleDrift > 0) {
+        var driftTime = now * 0.001;
+        baseX += Math.sin(driftTime * 0.9 + p.seed * 10) * idleDrift * p.depth;
+        baseY += Math.cos(driftTime * 0.75 + p.depth * 10) * idleDrift * p.depth;
+      }
+      if (pointer.active && !reducedMotion && pointerRepel > 0 && repelRadius > 0) {
+        var dx = baseX - pointer.smoothX, dy = baseY - pointer.smoothY;
+        var distance = Math.hypot(dx, dy);
+        if (distance > 0 && distance < repelRadius) {
+          var force = Math.pow(1 - distance / repelRadius, 2) * pointerRepel;
+          baseX += (dx / distance) * force;
+          baseY += (dy / distance) * force;
+        }
+      }
+      var follow = reducedMotion ? 1 : 0.22;
+      p.x += (baseX - p.x) * follow;
+      p.y += (baseY - p.y) * follow;
+      ctx.globalAlpha = clamp(0.35 + progress * 0.65, 0, 1);
+      drawParticle(p);
+    });
+
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    if (gathering && complete) gathering = false;
+    animationFrame = window.requestAnimationFrame(render);
+  }
+
+  function ensureRenderLoop() {
+    if (animationFrame === null) animationFrame = window.requestAnimationFrame(render);
+  }
+
+  function sampleText() {
+    var currentBuild = ++buildId;
+    var rect = container.getBoundingClientRect();
+    width = Math.floor(rect.width); height = Math.floor(rect.height);
+    if (width <= 0 || height <= 0) return;
+
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.floor(width * dpr));
+    canvas.height = Math.max(1, Math.floor(height * dpr));
+    canvas.style.width = '100%'; canvas.style.height = '100%';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    var computed = window.getComputedStyle(container);
+    var resolvedFamily = fontFamily === 'inherit' ? computed.fontFamily || 'sans-serif' : fontFamily;
+    var resolvedSize = resolveFontSize(fontSize, container, fontWeight, resolvedFamily);
+    var font = fontWeight + ' ' + resolvedSize + 'px ' + resolvedFamily;
+
+    waitForFonts(font).then(function () {
+      if (currentBuild !== buildId) return;
+      var offscreen = document.createElement('canvas');
+      var offCtx = offscreen.getContext('2d', { willReadFrequently: true });
+      if (!offCtx) return;
+
+      var content = TEXT || ' ';
+      var maxTextWidth = width * 0.92;
+      offCtx.font = font;
+      var metrics = offCtx.measureText(content);
+      var measuredWidth = Math.max(1, metrics.width);
+      if (measuredWidth > maxTextWidth) {
+        resolvedSize = Math.max(18, resolvedSize * (maxTextWidth / measuredWidth));
+        font = fontWeight + ' ' + resolvedSize + 'px ' + resolvedFamily;
+        waitForFonts(font).then(function () {
+          if (currentBuild !== buildId) return;
+          offCtx.font = font;
+          metrics = offCtx.measureText(content);
+          buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild);
+        });
+        return;
+      }
+      buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild);
+    });
+  }
+
+  function buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild) {
+    var left = Math.ceil(metrics.actualBoundingBoxLeft || 0);
+    var right = Math.ceil(metrics.actualBoundingBoxRight || metrics.width);
+    var ascent = Math.ceil(metrics.actualBoundingBoxAscent || resolvedSize * 0.78);
+    var descent = Math.ceil(metrics.actualBoundingBoxDescent || resolvedSize * 0.22);
+    var padding = Math.max(12, Math.ceil(resolvedSize * 0.08));
+    var textWidth = Math.max(1, left + right);
+    var textHeight = Math.max(1, ascent + descent);
+
+    offscreen.width = textWidth + padding * 2;
+    offscreen.height = textHeight + padding * 2;
+    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+    offCtx.font = fontWeight + ' ' + resolvedSize + 'px ' + (fontFamily === 'inherit' ? (window.getComputedStyle(container).fontFamily || 'sans-serif') : fontFamily);
+    offCtx.textAlign = 'left'; offCtx.textBaseline = 'alphabetic';
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillText(content, padding - left, padding + ascent);
+
+    var imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+    var targets = [];
+    var step = Math.max(2, Math.floor(density));
+    for (var y = 0; y < offscreen.height; y += step) {
+      for (var x = 0; x < offscreen.width; x += step) {
+        var alpha = imageData.data[(y * offscreen.width + x) * 4 + 3];
+        if (alpha > 40) {
+          targets.push({ x: width / 2 - offscreen.width / 2 + x, y: height / 2 - offscreen.height / 2 + y, alpha: alpha / 255 });
+        }
+      }
+    }
+
+    var maxParticles = Math.max(900, Math.min(5200, Math.floor((width * height) / 90)));
+    var stride = Math.max(1, Math.ceil(targets.length / maxParticles));
+    var baseRgb = hexToRgb(color);
+    var highlightRgb = hexToRgb(highlightColor);
+    var selected = targets.filter(function (_, index) { return index % stride === 0; });
+
+    particles = selected.map(function (target, index) {
+      var seed = ((index * 9301 + 49297) % 233280) / 233280;
+      var depth = 0.45 + (((index * 233 + 97) % 1000) / 1000) * 0.9;
+      var blend = baseRgb && highlightRgb ? clamp(target.x / Math.max(1, width) + (seed - 0.5) * 0.35, 0, 1) : 0;
+      var particleColor = baseRgb && highlightRgb ? rgbToCss(mixRgb(baseRgb, highlightRgb, blend)) : color;
+      var angle = seed * Math.PI * 2;
+      var distance = (reducedMotion ? 0 : scatter) * (0.35 + depth * 0.75);
+      var startX = target.x + Math.cos(angle) * distance + (seed - 0.5) * scatter * 0.45;
+      var startY = target.y + Math.sin(angle) * distance + (depth - 0.9) * scatter * 0.45;
+      return {
+        x: reducedMotion ? target.x : startX,
+        y: reducedMotion ? target.y : startY,
+        startX: startX, startY: startY,
+        targetX: target.x, targetY: target.y,
+        size: Math.max(0.6, particleSize * (0.75 + target.alpha * 0.45)),
+        color: particleColor, seed: seed, depth: depth, delay: seed * stagger
+      };
+    });
+
+    pointer.x = width / 2; pointer.y = height / 2;
+    pointer.smoothX = pointer.x; pointer.smoothY = pointer.y;
+
+    if (reducedMotion) {
+      particles.forEach(function (p) {
+        p.x = p.targetX; p.y = p.targetY;
+        p.startX = p.targetX; p.startY = p.targetY; p.delay = 0;
+      });
+      gathering = false;
+    } else startGather(false);
+    ensureRenderLoop();
+  }
+
+  function queueSample() {
+    if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
+    resizeFrame = window.requestAnimationFrame(sampleText);
+  }
+
+  function handlePointerMove(e) {
+    var rect = canvas.getBoundingClientRect();
+    pointer.x = e.clientX - rect.left;
+    pointer.y = e.clientY - rect.top;
+    pointer.active = true;
+  }
+  function handlePointerLeave() { pointer.active = false; }
+  function handlePointerEnter(e) {
+    handlePointerMove(e);
+    if (trigger === 'hover') startGather(true);
+  }
+  function handleClick() { if (trigger === 'click') startGather(true); }
+
+  var reduceMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var handleReduceMotionChange = function (e) { reducedMotion = e.matches; sampleText(); };
+  if (reduceMotionQuery && reduceMotionQuery.addEventListener) reduceMotionQuery.addEventListener('change', handleReduceMotionChange);
+
+  canvas.addEventListener('pointerenter', handlePointerEnter);
+  canvas.addEventListener('pointermove', handlePointerMove);
+  canvas.addEventListener('pointerleave', handlePointerLeave);
+  canvas.addEventListener('click', handleClick);
+
+  var resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(queueSample) : null;
+  if (resizeObserver) resizeObserver.observe(container);
+  sampleText();
+})();
+</script>
+
+<script>
+/* ===== React Bits Ballpit → vanilla WebGL2 (background, instanced spheres) ===== */
+(function () {
+  var canvas = document.getElementById('ballpitBg');
+  if (!canvas) return;
+  var gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: true });
+  if (!gl) return;
+
+  var COUNT = 200;
+  var CONFIG = {
+    colors: [0x8b5cf6, 0x22d3ee, 0xf472b6, 0xffffff],
+    ambientColor: [1, 1, 1], ambientIntensity: 0.85,
+    lightIntensity: 120,
+    minSize: 0.35, maxSize: 0.7, size0: 1.1,
+    gravity: 0.5, friction: 0.9975, wallBounce: 0.95, maxVelocity: 0.15,
+    maxZ: 2, controlSphere0: true
+  };
+
+  var SEG = 24, RING = 14;
+  var positions = [], normals = [], indices = [];
+  for (var rr = 0; rr <= RING; rr++) {
+    var phi = rr * Math.PI / RING;
+    for (var ss = 0; ss <= SEG; ss++) {
+      var theta = ss * 2 * Math.PI / SEG;
+      positions.push(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
+      normals.push(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta));
+    }
+  }
+  for (var r2 = 0; r2 < RING; r2++) {
+    for (var s2 = 0; s2 < SEG; s2++) {
+      var a = r2 * (SEG + 1) + s2;
+      var b = a + SEG + 1;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+
+  var VERT = `#version 300 es
+layout(location=0) in vec3 aPos;
+layout(location=1) in vec3 aNormal;
+layout(location=2) in vec3 aOffset;
+layout(location=3) in float aScale;
+layout(location=4) in vec3 aColor;
+uniform mat4 uProj;
+uniform mat4 uView;
+out vec3 vNormal;
+out vec3 vWorldPos;
+out vec3 vColor;
+void main(){
+  vec3 wp = aOffset + aPos * aScale;
+  vWorldPos = wp;
+  vNormal = aNormal;
+  vColor = aColor;
+  gl_Position = uProj * uView * vec4(wp, 1.0);
+}`;
+
+  var FRAG = `#version 300 es
+precision highp float;
+in vec3 vNormal;
+in vec3 vWorldPos;
+in vec3 vColor;
+uniform vec3 uCamPos;
+uniform vec3 uLightPos;
+uniform float uLightIntensity;
+uniform vec3 uAmbientColor;
+uniform float uAmbientIntensity;
+out vec4 outColor;
+vec3 aces(vec3 x){ return clamp(x*(2.51*x+0.03)/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }
+void main(){
+  vec3 N = normalize(vNormal);
+  vec3 V = normalize(uCamPos - vWorldPos);
+  vec3 L = normalize(uLightPos - vWorldPos);
+  float dist = length(uLightPos - vWorldPos);
+  float atten = uLightIntensity / (1.0 + dist*dist);
+  float diff = max(dot(N, L), 0.0);
+  vec3 H = normalize(L + V);
+  float spec = pow(max(dot(N, H), 0.0), 80.0) * 1.6;
+  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+  vec3 env = mix(vColor, vec3(1.0), clamp(max(N.y, 0.0) * 0.30 + fres * 0.55, 0.0, 1.0));
+  vec3 col = uAmbientColor * uAmbientIntensity * env
+           + vColor * diff * atten
+           + vec3(1.0) * spec * atten
+           + vec3(1.0) * fres * 0.22 * uAmbientIntensity;
+  outColor = vec4(aces(col), 1.0);
+}`;
+
+  function compile(type, src) {
+    var sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.error('Ballpit shader error:', gl.getShaderInfoLog(sh));
+      return null;
+    }
+    return sh;
+  }
+  var prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('Ballpit link error:', gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
+
+  var uProj = gl.getUniformLocation(prog, 'uProj');
+  var uView = gl.getUniformLocation(prog, 'uView');
+  var uCamPos = gl.getUniformLocation(prog, 'uCamPos');
+  var uLightPos = gl.getUniformLocation(prog, 'uLightPos');
+  var uLightIntensity = gl.getUniformLocation(prog, 'uLightIntensity');
+  var uAmbientColor = gl.getUniformLocation(prog, 'uAmbientColor');
+  var uAmbientIntensity = gl.getUniformLocation(prog, 'uAmbientIntensity');
+
+  var ibo = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+  var vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions.concat(normals)), gl.STATIC_DRAW);
+  var stride = 6 * 4;
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, 0);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, stride, 3 * 4);
+
+  var instOffset = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, instOffset);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(3 * COUNT), gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(2);
+  gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(2, 1);
+
+  var instScale = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, instScale);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(COUNT), gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(3);
+  gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(3, 1);
+
+  var instColor = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, instColor);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(3 * COUNT), gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(4);
+  gl.vertexAttribPointer(4, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(4, 1);
+
+  var pos = new Float32Array(3 * COUNT);
+  var vel = new Float32Array(3 * COUNT);
+  var size = new Float32Array(COUNT);
+  var center = [0, 0, 0];
+
+  function randFloat(a, b) { return a + Math.random() * (b - a); }
+  function randSpread(range) { return range * (Math.random() - 0.5); }
+
+  var maxX = 5, maxY = 5;
+  for (var i = 1; i < COUNT; i++) {
+    pos[3 * i] = randSpread(2 * maxX);
+    pos[3 * i + 1] = randSpread(2 * maxY);
+    pos[3 * i + 2] = randSpread(2 * CONFIG.maxZ);
+  }
+  for (var i2 = 0; i2 < COUNT; i2++) size[i2] = i2 === 0 ? CONFIG.size0 : randFloat(CONFIG.minSize, CONFIG.maxSize);
+
+  var palette = CONFIG.colors.map(function (c) { return [((c >> 16) & 255) / 255, ((c >> 8) & 255) / 255, (c & 255) / 255]; });
+  var instColorData = new Float32Array(3 * COUNT);
+  for (var cc = 0; cc < COUNT; cc++) {
+    var ratio = cc / (COUNT - 1) * (palette.length - 1);
+    var idx = Math.floor(ratio), alpha = ratio - idx;
+    var s = palette[Math.min(idx, palette.length - 1)];
+    var e = palette[Math.min(idx + 1, palette.length - 1)];
+    instColorData[3 * cc] = s[0] + alpha * (e[0] - s[0]);
+    instColorData[3 * cc + 1] = s[1] + alpha * (e[1] - s[1]);
+    instColorData[3 * cc + 2] = s[2] + alpha * (e[2] - s[2]);
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, instColor);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, instColorData);
+
+  var vI = [0, 0, 0], vB = [0, 0, 0], vO = [0, 0, 0], vN = [0, 0, 0];
+  var vD = [0, 0, 0], vJ = [0, 0, 0], vH = [0, 0, 0], vT = [0, 0, 0], vF = [0, 0, 0];
+
+  function vlen(v) { return Math.hypot(v[0], v[1], v[2]); }
+  function vnorm(v) { var l = vlen(v); if (l > 0) { v[0] /= l; v[1] /= l; v[2] /= l; } return v; }
+
+  function updatePhysics(dt) {
+    var r = 0;
+    if (CONFIG.controlSphere0) {
+      r = 1;
+      vF[0] = pos[0]; vF[1] = pos[1]; vF[2] = pos[2];
+      vF[0] += (center[0] - vF[0]) * 0.1;
+      vF[1] += (center[1] - vF[1]) * 0.1;
+      vF[2] += (center[2] - vF[2]) * 0.1;
+      pos[0] = vF[0]; pos[1] = vF[1]; pos[2] = vF[2];
+      vel[0] = 0; vel[1] = 0; vel[2] = 0;
+    }
+    for (var idx = r; idx < COUNT; idx++) {
+      var base = 3 * idx;
+      vel[base + 1] -= dt * CONFIG.gravity * size[idx];
+      vel[base] *= CONFIG.friction;
+      vel[base + 1] *= CONFIG.friction;
+      vel[base + 2] *= CONFIG.friction;
+      var vl = Math.hypot(vel[base], vel[base + 1], vel[base + 2]);
+      if (vl > CONFIG.maxVelocity) {
+        var k = CONFIG.maxVelocity / vl;
+        vel[base] *= k; vel[base + 1] *= k; vel[base + 2] *= k;
+      }
+      pos[base] += vel[base];
+      pos[base + 1] += vel[base + 1];
+      pos[base + 2] += vel[base + 2];
+    }
+    for (var idx2 = r; idx2 < COUNT; idx2++) {
+      var b2 = 3 * idx2;
+      var radius = size[idx2];
+      for (var jdx = idx2 + 1; jdx < COUNT; jdx++) {
+        var ob = 3 * jdx;
+        vO[0] = pos[ob]; vO[1] = pos[ob + 1]; vO[2] = pos[ob + 2];
+        vN[0] = vel[ob]; vN[1] = vel[ob + 1]; vN[2] = vel[ob + 2];
+        var or = size[jdx];
+        vD[0] = vO[0] - pos[b2]; vD[1] = vO[1] - pos[b2 + 1]; vD[2] = vO[2] - pos[b2 + 2];
+        var dist = vlen(vD);
+        var sumR = radius + or;
+        if (dist < sumR) {
+          var overlap = sumR - dist;
+          vJ[0] = vD[0]; vJ[1] = vD[1]; vJ[2] = vD[2];
+          vnorm(vJ);
+          vJ[0] *= 0.5 * overlap; vJ[1] *= 0.5 * overlap; vJ[2] *= 0.5 * overlap;
+          var bl = Math.hypot(vel[b2], vel[b2 + 1], vel[b2 + 2]);
+          var nl = Math.hypot(vN[0], vN[1], vN[2]);
+          vH[0] = vJ[0] * Math.max(bl, 1); vH[1] = vJ[1] * Math.max(bl, 1); vH[2] = vJ[2] * Math.max(bl, 1);
+          vT[0] = vJ[0] * Math.max(nl, 1); vT[1] = vJ[1] * Math.max(nl, 1); vT[2] = vJ[2] * Math.max(nl, 1);
+          pos[b2] -= vJ[0]; pos[b2 + 1] -= vJ[1]; pos[b2 + 2] -= vJ[2];
+          vel[b2] -= vH[0]; vel[b2 + 1] -= vH[1]; vel[b2 + 2] -= vH[2];
+          pos[ob] += vJ[0]; pos[ob + 1] += vJ[1]; pos[ob + 2] += vJ[2];
+          vel[ob] += vT[0]; vel[ob + 1] += vT[1]; vel[ob + 2] += vT[2];
+        }
+      }
+      if (CONFIG.controlSphere0) {
+        vD[0] = pos[0] - pos[b2]; vD[1] = pos[1] - pos[b2 + 1]; vD[2] = pos[2] - pos[b2 + 2];
+        var dist2 = vlen(vD);
+        var sumR0 = radius + size[0];
+        if (dist2 < sumR0) {
+          var diff = sumR0 - dist2;
+          vJ[0] = vD[0]; vJ[1] = vD[1]; vJ[2] = vD[2];
+          vnorm(vJ);
+          vJ[0] *= diff; vJ[1] *= diff; vJ[2] *= diff;
+          var bl2 = Math.hypot(vel[b2], vel[b2 + 1], vel[b2 + 2]);
+          vH[0] = vJ[0] * Math.max(bl2, 2); vH[1] = vJ[1] * Math.max(bl2, 2); vH[2] = vJ[2] * Math.max(bl2, 2);
+          pos[b2] -= vJ[0]; pos[b2 + 1] -= vJ[1]; pos[b2 + 2] -= vJ[2];
+          vel[b2] -= vH[0]; vel[b2 + 1] -= vH[1]; vel[b2 + 2] -= vH[2];
+        }
+      }
+      if (Math.abs(pos[b2]) + radius > maxX) {
+        pos[b2] = Math.sign(pos[b2]) * (maxX - radius);
+        vel[b2] = -vel[b2] * CONFIG.wallBounce;
+      }
+      if (CONFIG.gravity === 0) {
+        if (Math.abs(pos[b2 + 1]) + radius > maxY) {
+          pos[b2 + 1] = Math.sign(pos[b2 + 1]) * (maxY - radius);
+          vel[b2 + 1] = -vel[b2 + 1] * CONFIG.wallBounce;
+        }
+      } else if (pos[b2 + 1] - radius < -maxY) {
+        pos[b2 + 1] = -maxY + radius;
+        vel[b2 + 1] = -vel[b2 + 1] * CONFIG.wallBounce;
+      }
+      var maxB = Math.max(CONFIG.maxZ, CONFIG.maxSize);
+      if (Math.abs(pos[b2 + 2]) + radius > maxB) {
+        pos[b2 + 2] = Math.sign(pos[b2 + 2]) * (CONFIG.maxZ - radius);
+        vel[b2 + 2] = -vel[b2 + 2] * CONFIG.wallBounce;
+      }
+    }
+  }
+
+  var fovBase = 50 * Math.PI / 180;
+  var camPos = [0, 0, 20];
+  var viewMatrix = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -20, 1]);
+  var projMatrix = new Float32Array(16);
+  function perspective(fov, aspect, near, far) {
+    var f = 1 / Math.tan(fov / 2);
+    var nf = 1 / (near - far);
+    return new Float32Array([
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far + near) * nf, -1,
+      0, 0, 2 * far * near * nf, 0
+    ]);
+  }
+  var aspect = 1, fov = fovBase, tanHalf = Math.tan(fovBase / 2);
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    canvas.width = Math.max(1, Math.floor(w * Math.min(window.devicePixelRatio || 1, 2)));
+    canvas.height = Math.max(1, Math.floor(h * Math.min(window.devicePixelRatio || 1, 2)));
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    aspect = w / h;
+    fov = fovBase;
+    if (aspect > 1.5) fov = 2 * Math.atan(Math.tan(fovBase / 2) / (aspect / 1.5));
+    tanHalf = Math.tan(fov / 2);
+    projMatrix = perspective(fov, aspect, 0.1, 100);
+    gl.uniformMatrix4fv(uProj, false, projMatrix);
+    gl.uniformMatrix4fv(uView, false, viewMatrix);
+    var wH = 2 * tanHalf * 20;
+    maxX = wH * aspect / 2;
+    maxY = wH / 2;
+  }
+
+  canvas.addEventListener('pointermove', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    var ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    center[0] = ndcX * tanHalf * aspect * 20;
+    center[1] = ndcY * tanHalf * 20;
+    center[2] = 0;
+  });
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    updatePhysics(dt);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, instOffset);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instScale);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, size);
+
+    gl.uniform3f(uCamPos, camPos[0], camPos[1], camPos[2]);
+    gl.uniform3f(uLightPos, pos[0], pos[1], pos[2]);
+    gl.uniform1f(uLightIntensity, CONFIG.lightIntensity);
+    gl.uniform3f(uAmbientColor, CONFIG.ambientColor[0], CONFIG.ambientColor[1], CONFIG.ambientColor[2]);
+    gl.uniform1f(uAmbientIntensity, CONFIG.ambientIntensity);
+
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, COUNT);
+
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(frame);
+
+  // debug handle (verification + tuning, kept — same pattern as window.DG)
+  window.__ballpit = {
+    gl: gl,
+    count: COUNT,
+    getPos: function () { return Array.prototype.slice.call(pos, 0, 6); },
+    getSize: function () { return Array.prototype.slice.call(size, 0, 3); },
+    drawSync: function () {
+      gl.bindBuffer(gl.ARRAY_BUFFER, instOffset);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, pos);
+      gl.bindBuffer(gl.ARRAY_BUFFER, instScale);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, size);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.DEPTH_TEST);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+      gl.drawElementsInstanced(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0, COUNT);
+    }
+  };
+})();
 </script>
 
 </body>
