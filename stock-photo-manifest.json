@@ -2,7 +2,7 @@
  "project": "ielts-b1",
  "image_source": "Pexels (images.pexels.com — stable CDN, free license)",
  "updated": "2026-08-10",
- "note": "360 unique slide backgrounds (12 per deck, 30 decks) + portal covers synced to each deck's title-slide image. No duplicate photo IDs project-wide. Sourced + byte-verified via Pexels API.",
+ "note": "360 unique slide backgrounds (12 per deck, 30 decks) + portal covers synced to each deck's title-slide image. No duplicate photo IDs project-wide. Sourced + byte-verified via Pexels API. | languages-communication cover: upper-body gesture photo (10029797) 2026-08-11.",
  "decks": {
   "accommodation-lifestyle": {
    "title_slide": "https://images.pexels.com/photos/7587828/pexels-photo-7587828.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
@@ -192,9 +192,9 @@
    ]
   },
   "languages-communication": {
-   "title_slide": "https://images.pexels.com/photos/18512922/pexels-photo-18512922.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+   "title_slide": "https://images.pexels.com/photos/10029797/pexels-photo-10029797.jpeg",
    "slides_0_11": [
-    "https://images.pexels.com/photos/18512922/pexels-photo-18512922.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "https://images.pexels.com/photos/10029797/pexels-photo-10029797.jpeg",
     "https://images.pexels.com/photos/15702599/pexels-photo-15702599.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
     "https://images.pexels.com/photos/3184401/pexels-photo-3184401.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
     "https://images.pexels.com/photos/31418370/pexels-photo-31418370.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
