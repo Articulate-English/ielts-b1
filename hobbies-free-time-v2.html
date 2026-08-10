@@ -25,17 +25,17 @@
   --vocab-c1: #f472b6;
   --glow: 0 0 25px rgba(var(--accent-rgb),.22), 0 0 60px rgba(var(--accent-rgb),.08);
   --bg-image-0: url('https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-1: url('https://images.pexels.com/photos/163210/pexels-photo-163210.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-2: url('https://images.pexels.com/photos/163444/pexels-photo-163444.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-1: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-2: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-3: url('https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-4: url('https://images.pexels.com/photos/163210/pexels-photo-163210.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-5: url('https://images.pexels.com/photos/163444/pexels-photo-163444.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-4: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-5: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-6: url('https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-7: url('https://images.pexels.com/photos/163210/pexels-photo-163210.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-8: url('https://images.pexels.com/photos/163444/pexels-photo-163444.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-7: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-8: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-9: url('https://images.pexels.com/photos/1547813/pexels-photo-1547813.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-10: url('https://images.pexels.com/photos/163210/pexels-photo-163210.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-11: url('https://images.pexels.com/photos/163444/pexels-photo-163444.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-10: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-11: url('https://images.pexels.com/photos/1391498/pexels-photo-1391498.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-12: url('https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-13: url('https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg?auto=compress&cs=tinysrgb&w=1280');
 }
@@ -214,45 +214,42 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="2" style="background-image:var(--bg-image-2);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 1</span>
+        <span class="section-badge badge-accent">Part 1 Question 1</span>
     <div class="question-card">
-      <p class="question-text">1. What do you like to do in your free time?</p>
-      <div class="follow-ups">How often?</div>
+      <p class="question-text">1. What do you do in your free time?</p>
+      <div class="follow-ups">Follow-up: How much free time do you have?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer2">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">I like watching films and playing football.</div>
+      <div class="answer-text">In my free time, I like to read, play video games and meet my friends. I also enjoy cooking new recipes. I do not have a lot of free time during the week, maybe two hours a day, but at the weekend I have much more.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer2', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="3" style="background-image:var(--bg-image-3);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 2</span>
+        <span class="section-badge badge-accent">Part 1 Question 2</span>
     <div class="question-card">
-      <p class="question-text">2. Do you have any hobbies?</p>
-      <div class="follow-ups">Why do you like it?</div>
+      <p class="question-text">2. Do you prefer to spend your free time alone or with other people?</p>
+      <div class="follow-ups">Follow-up: Why?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer3">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, I enjoy cooking. I try new recipes.</div>
+      <div class="answer-text">It depends on my mood. When I am tired, I prefer to be alone, reading or listening to music. When I have energy, I love spending time with friends, going out or playing sport together. Both are important for me: alone time helps me relax, and friends make me happy.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer3', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="4" style="background-image:var(--bg-image-4);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 3</span>
+        <span class="section-badge badge-accent">Part 1 Question 3</span>
     <div class="question-card">
-      <p class="question-text">3. Did you have more free time when you were younger?</p>
-      <div class="follow-ups">What did you do?</div>
+      <p class="question-text">3. Is there a hobby you would like to try in the future?</p>
+      <div class="follow-ups">Follow-up: What is it?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer4">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, I played outside a lot after school.</div>
+      <div class="answer-text">Yes, I would like to learn to play the guitar. I love music, and I think playing an instrument would be very satisfying. I also heard that learning music is good for your brain and your memory. I am planning to start lessons next year.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer4', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="5" style="background-image:var(--bg-image-5);">
   <div class="content">
@@ -264,22 +261,22 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="6" style="background-image:var(--bg-image-6);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 2 - Cue Card</span>
+        <span class="section-badge badge-accent">Part 2 - Cue Card</span>
     <div class="cue-card">
-      <h4>Describe a hobby you would like to try.</h4>
+      <h4>Describe a hobby you enjoy</h4>
       <ul>
-      <li>what it is</li>
-      <li>why you are interested</li>
-      <li>what you need to start</li>
-      <li>when you might try it</li>
+        <li>What the hobby is</li>
+        <li>How you first became interested in it</li>
+        <li>How long you have been doing it</li>
+        <li>What you need for it</li>
+        <li>And explain why you enjoy it</li>
       </ul>
     </div>
     <div class="model-answer hidden-answer" id="answer6">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">I would like to try photography. I am interested because I enjoy looking at beautiful pictures. I need a camera and some lessons. I might try it next summer when I go on holiday.</div>
+      <div class="answer-text">A hobby that I really enjoy is photography. I became interested in it three years ago, when my father gave me an old camera. At first I only took photos of my family and my cat, but then I discovered that I love capturing light and colours. I have been doing it seriously for about two years now. All I need is my camera and my phone, and I always carry them with me. I enjoy photography because it makes me look at the world more carefully. A normal street can become beautiful if you find the right moment and the right angle.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer6', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="7" style="background-image:var(--bg-image-7);">
   <div class="content">
@@ -291,42 +288,42 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="8" style="background-image:var(--bg-image-8);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 1</span>
+        <span class="section-badge badge-rose">Part 3 Question 1</span>
     <div class="question-card">
-      <p class="question-text">1. Are hobbies important?</p>
+      <p class="question-text">1. What types of leisure activities are popular in your country?</p>
+      <div class="follow-ups">Follow-up: Why are they popular?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer8">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, hobbies help people relax and learn new things.</div>
+      <div class="answer-text">In my country, people love walking in parks, going to cafes, watching films and playing football. In winter, many people go to the mountains to ski. I think these activities are popular because they are social and affordable. For example, meeting friends in a cafe is a national habit, and it does not cost much.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer8', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="9" style="background-image:var(--bg-image-9);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 2</span>
+        <span class="section-badge badge-rose">Part 3 Question 2</span>
     <div class="question-card">
-      <p class="question-text">2. Why do some people not have hobbies?</p>
+      <p class="question-text">2. Why is it important for people to have time for leisure activities?</p>
+      <div class="follow-ups">Follow-up: What happens without it?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer9">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">They may be too busy with work or studies.</div>
+      <div class="answer-text">Leisure time is essential because it reduces stress and helps us recharge. When we relax and do things we enjoy, we are happier and healthier, and we work better too. Without free time, people become tired, anxious and even ill. I believe a good balance between work and free time is the secret to a good life.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer9', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="10" style="background-image:var(--bg-image-10);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 3</span>
+        <span class="section-badge badge-rose">Part 3 Question 3</span>
     <div class="question-card">
-      <p class="question-text">3. Should children have hobbies?</p>
+      <p class="question-text">3. Are the types of leisure activities that are popular today the same as those when your parents were young?</p>
+      <div class="follow-ups">Follow-up: What has changed?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer10">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, hobbies help children discover what they enjoy.</div>
+      <div class="answer-text">They are quite different. When my parents were young, people played outside, visited each other's homes and watched television together. Today, young people spend much more time on their phones, playing video games or watching videos online. I think the old way was more social, but the new way has more variety and freedom. Both have their good sides.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer10', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="11" style="background-image:var(--bg-image-11);">
   <div class="content">

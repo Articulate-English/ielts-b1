@@ -25,17 +25,17 @@
   --vocab-c1: #f472b6;
   --glow: 0 0 25px rgba(var(--accent-rgb),.22), 0 0 60px rgba(var(--accent-rgb),.08);
   --bg-image-0: url('https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-1: url('https://images.pexels.com/photos/46798/pexels-photo-46798.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-2: url('https://images.pexels.com/photos/163403/pexels-photo-163403.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-1: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-2: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-3: url('https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-4: url('https://images.pexels.com/photos/46798/pexels-photo-46798.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-5: url('https://images.pexels.com/photos/163403/pexels-photo-163403.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-4: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-5: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-6: url('https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-7: url('https://images.pexels.com/photos/46798/pexels-photo-46798.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-8: url('https://images.pexels.com/photos/163403/pexels-photo-163403.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-7: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-8: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-9: url('https://images.pexels.com/photos/248547/pexels-photo-248547.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-10: url('https://images.pexels.com/photos/46798/pexels-photo-46798.jpeg?auto=compress&cs=tinysrgb&w=1280');
-  --bg-image-11: url('https://images.pexels.com/photos/163403/pexels-photo-163403.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-10: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
+  --bg-image-11: url('https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-12: url('https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1280');
   --bg-image-13: url('https://images.pexels.com/photos/1648776/pexels-photo-1648776.jpeg?auto=compress&cs=tinysrgb&w=1280');
 }
@@ -214,45 +214,42 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="2" style="background-image:var(--bg-image-2);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 1</span>
+        <span class="section-badge badge-accent">Part 1 Question 1</span>
     <div class="question-card">
-      <p class="question-text">1. Do you like sport?</p>
-      <div class="follow-ups">Do you play?</div>
+      <p class="question-text">1. Do you play any sports?</p>
+      <div class="follow-ups">Follow-up: Which ones?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer2">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, I like football. I watch matches every weekend.</div>
+      <div class="answer-text">Yes, I play football with my friends every Friday, and I go swimming in summer. I also like running, especially in the park in the morning. I am not a professional athlete, but I play for fun and for my health.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer2', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="3" style="background-image:var(--bg-image-3);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 2</span>
+        <span class="section-badge badge-accent">Part 1 Question 2</span>
     <div class="question-card">
-      <p class="question-text">2. What is your favourite sport to watch?</p>
-      <div class="follow-ups">Why?</div>
+      <p class="question-text">2. Do you watch sports on TV?</p>
+      <div class="follow-ups">Follow-up: Which sports?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer3">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">I like watching tennis because it is exciting.</div>
+      <div class="answer-text">Yes, I watch football on TV, especially when my national team plays. I also watch tennis and athletics during big competitions like the Olympics. Watching sport is exciting, but I prefer playing to watching, because playing is healthier and more fun.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer3', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="4" style="background-image:var(--bg-image-4);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 1 Question 3</span>
+        <span class="section-badge badge-accent">Part 1 Question 3</span>
     <div class="question-card">
-      <p class="question-text">3. Did you do sports at school?</p>
-      <div class="follow-ups">Did you enjoy it?</div>
+      <p class="question-text">3. Is it important for children to play sports?</p>
+      <div class="follow-ups">Follow-up: Why?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer4">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, I played basketball and ran in races.</div>
+      <div class="answer-text">Yes, it is very important. Sport teaches children discipline, teamwork and how to lose with dignity. It also keeps them healthy and away from screens. Children who play sports are usually more confident and they make friends more easily. I think every child should play at least one sport.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer4', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="5" style="background-image:var(--bg-image-5);">
   <div class="content">
@@ -264,22 +261,22 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="6" style="background-image:var(--bg-image-6);">
   <div class="content">
-    <span class="section-badge badge-accent">Part 2 - Cue Card</span>
+        <span class="section-badge badge-accent">Part 2 - Cue Card</span>
     <div class="cue-card">
-      <h4>Describe a sports event you watched or took part in.</h4>
+      <h4>Describe a sports event you watched or took part in</h4>
       <ul>
-      <li>what event it was</li>
-      <li>where it happened</li>
-      <li>who was there</li>
-      <li>why you remember it</li>
+        <li>What the event was</li>
+        <li>Where and when it happened</li>
+        <li>Who was there</li>
+        <li>What happened during the event</li>
+        <li>And explain how you felt about it</li>
       </ul>
     </div>
     <div class="model-answer hidden-answer" id="answer6">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">I watched a football final at a stadium last year. My brother and two friends came with me. Our team won in the last minute. I remember it because the crowd was very loud and happy.</div>
+      <div class="answer-text">A sports event that I remember clearly was a football match between my school and a neighbouring school, when I was sixteen. It took place on our school field on a sunny spring afternoon, and the whole school came to watch. I was not playing, but my best friend was the goalkeeper. The match was very close and exciting. In the last minute, my friend saved a penalty, and we won two to one. The crowd went crazy. I felt incredibly proud of him and of our team. That day I understood that sport is not only about winning; it is about friendship and unforgettable moments.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer6', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="7" style="background-image:var(--bg-image-7);">
   <div class="content">
@@ -291,42 +288,42 @@ p, li { margin-bottom: .5em; font-size: clamp(1.05rem, 1.5vw, 1.35rem); color: #
 </section>
 <section class="slide" data-slide="8" style="background-image:var(--bg-image-8);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 1</span>
+        <span class="section-badge badge-rose">Part 3 Question 1</span>
     <div class="question-card">
-      <p class="question-text">1. Is sport important for young people?</p>
+      <p class="question-text">1. What are the benefits of playing a sport?</p>
+      <div class="follow-ups">Follow-up: Can you explain?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer8">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, sport keeps them fit and teaches teamwork.</div>
+      <div class="answer-text">Playing sport has many benefits. Physically, it keeps you fit and strong. Mentally, it reduces stress and makes you feel happier, because exercise releases good chemicals in your brain. It also teaches you important life skills: discipline, teamwork, and how to handle both success and failure. I believe everyone should play some sport, at any age.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer8', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="9" style="background-image:var(--bg-image-9);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 2</span>
+        <span class="section-badge badge-rose">Part 3 Question 2</span>
     <div class="question-card">
-      <p class="question-text">2. Should schools have more sports lessons?</p>
+      <p class="question-text">2. How can sports bring people from different countries closer together?</p>
+      <div class="follow-ups">Follow-up: Can you give an example?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer9">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">Yes, because many children do not exercise enough.</div>
+      <div class="answer-text">Sport is a universal language. When people play together, they do not need to speak the same language. Events like the World Cup or the Olympics bring the whole world together, and for a few weeks, people forget their differences and celebrate the same passion. For example, during the World Cup, people in my city watch matches with foreigners and cheer for each other's teams. That is the power of sport.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer9', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="10" style="background-image:var(--bg-image-10);">
   <div class="content">
-    <span class="section-badge badge-rose">Part 3 Question 3</span>
+        <span class="section-badge badge-rose">Part 3 Question 3</span>
     <div class="question-card">
-      <p class="question-text">3. Why do some people not like competition?</p>
+      <p class="question-text">3. Do you think old people can keep fit by playing sports?</p>
+      <div class="follow-ups">Follow-up: What sports are suitable?</div>
     </div>
     <div class="model-answer hidden-answer" id="answer10">
       <div class="answer-label">Model Answer</div>
-      <div class="answer-text">They may feel stressed or afraid of losing.</div>
+      <div class="answer-text">Yes, absolutely. It is never too late to be active. For older people, gentle sports are best: swimming, walking, cycling on flat roads, or even dancing. These activities are easy on the knees and good for the heart. I know a seventy-year-old man who swims every morning, and he looks twenty years younger. Staying active is the secret to a healthy old age.</div>
     </div>
     <button class="reveal-btn" onclick="toggleAnswer('answer10', this)">Reveal Model Answer</button>
-  </div>
 </section>
 <section class="slide" data-slide="11" style="background-image:var(--bg-image-11);">
   <div class="content">
