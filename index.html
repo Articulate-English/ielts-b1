@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'self'">
 <title>IELTS Speaking B1 Practice Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@1..1000&display=swap" rel="stylesheet">
 <style>
 :root { --hue: 200; --bg: #0a1020; --card-bg: rgba(15, 23, 42, 0.85); --border: rgba(251, 191, 36, 0.4); --text: #f1f5f9; --text-muted: #94a3b8; --accent: #fbbf24; --cyan: #22d3ee; --lime: #a3e635; --rose: #fb7185; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -57,10 +58,19 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 #cubesBg .cube-face--right { transform: translateX(50%) rotateY(90deg); }
 #cubesBg .cube-face--back, #cubesBg .cube-face--front { transform: rotateY(-90deg) translateX(50%) rotateY(90deg); }
 
-.particle-text { position: relative; display: block; width: 100%; height: 240px; min-height: 200px; overflow: hidden; touch-action: none; isolation: isolate; margin-bottom: 0.2em; font-family: 'Montserrat', sans-serif; font-weight: 900; }
-.particle-text__canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.particle-text__sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-@media (max-width: 768px) { .particle-text { height: 150px; min-height: 130px; } }
+/* REACT BITS PORT: VariableProximity title (Sofia Sans, white→indigo gradient) */
+#varprox { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 240px; min-height: 200px; pointer-events: none; overflow: hidden; margin-bottom: 0.2em; }
+#varprox .variable-proximity {
+  font-family: 'Sofia Sans', sans-serif;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  font-weight: 300; letter-spacing: .02em; line-height: 1.2; text-align: center;
+  background: linear-gradient(90deg, #ffffff, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  user-select: none; -webkit-user-select: none;
+  max-width: 94vw;
+}
+#varprox .variable-proximity span { display: inline-block; white-space: nowrap; }
+@media (max-width: 768px) { #varprox { height: 150px; min-height: 130px; } }
 .container { max-width: min(94vw, 1400px); margin: 0 auto; padding: 0 1.5em 3em; }
 .section-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 2em 0 1em; padding-bottom: 0.5em; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
 .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5em; }
@@ -89,10 +99,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <div id="cubesBg" aria-hidden="true"><div class="cubes-scene" id="cubesScene"></div></div>
 
 <header class="header">
-  <div class="particle-text" id="particleTitle" aria-label="IELTS Speaking B1 Practice">
-    <canvas aria-hidden="true"></canvas>
-    <span class="particle-text__sr">IELTS Speaking B1 Practice</span>
-  </div>
+  <div id="varprox" aria-hidden="true"></div>
   <p>Master all three parts of the IELTS Speaking test with model answers you can reveal when ready. Track your progress as you practice.</p>
   <span class="level-badge level-b1">B1 Level</span>
 </header>
@@ -671,278 +678,115 @@ loadProgress();
 </script>
 
 <script>
-/* ===== React Bits ParticleText → vanilla (title, white→indigo #ffffff/#8b5cf6) ===== */
+/* ===== React Bits VariableProximity → vanilla (title, Sofia Sans wght 300→1000, white→indigo gradient) ===== */
 (function () {
-  var container = document.getElementById('particleTitle');
-  var canvas = container ? container.querySelector('canvas') : null;
-  if (!container || !canvas) return;
-  var ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  var ctn = document.getElementById('varprox');
+  if (!ctn) return;
 
-  var TEXT = 'IELTS Speaking B1 Practice';
-  var particleSize = 2, density = 4;
-  var color = '#ffffff', highlightColor = '#8b5cf6';
-  var scatter = 180, gatherDuration = 1600, stagger = 420;
-  var pointerRepel = 40, repelRadius = 120, idleDrift = 0.7;
-  var trigger = 'mount';
-  var fontSize = 'clamp(2.2rem, 6vw, 4rem)';
-  var fontWeight = 900, fontFamily = 'inherit', glow = true;
+  var label = 'IELTS Speaking B1 Practice';
+  var fromFontVariationSettings = "'wght' 300";
+  var toFontVariationSettings = "'wght' 1000";
+  var radius = 180;
+  var falloff = 'linear';
 
-  var particles = [], animationFrame = null, resizeFrame = null, buildId = 0;
-  var gathering = false, gatherStart = 0;
-  var reducedMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
-  var width = 0, height = 0, dpr = 1;
-  var pointer = { active: false, x: 0, y: 0, smoothX: 0, smoothY: 0 };
-
-  function hexToRgb(hex) {
-    var clean = String(hex).replace('#', '').trim();
-    if (!/^[0-9a-fA-F]{6}$/.test(clean)) return null;
-    return { r: parseInt(clean.slice(0, 2), 16), g: parseInt(clean.slice(2, 4), 16), b: parseInt(clean.slice(4, 6), 16) };
-  }
-  function mixRgb(from, to, amount) {
-    return {
-      r: Math.round(from.r + (to.r - from.r) * amount),
-      g: Math.round(from.g + (to.g - from.g) * amount),
-      b: Math.round(from.b + (to.b - from.b) * amount)
-    };
-  }
-  function rgbToCss(rgb) { return 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'; }
-  function clamp(v, mn, mx) { return Math.min(Math.max(v, mn), mx); }
-  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-  function resolveFontSize(value, cont, weight, family) {
-    if (typeof value === 'number') return value;
-    var probe = document.createElement('span');
-    probe.textContent = 'M';
-    probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;font-size:' + value + ';font-weight:' + weight + ';font-family:' + family;
-    cont.appendChild(probe);
-    var size = parseFloat(window.getComputedStyle(probe).fontSize) || 96;
-    probe.remove();
-    return size;
-  }
-
-  function waitForFonts(font) {
-    if (!('fonts' in document)) return Promise.resolve();
-    return Promise.resolve()
-      .then(function () {
-        try { return document.fonts.load(font); } catch (e) { return undefined; }
-      })
-      .then(function () { return document.fonts.ready; });
-  }
-
-  function startGather(fromScatter) {
-    if (!particles.length) return;
-    var now = performance.now();
-    var spread = reducedMotion ? 0 : scatter;
-    particles.forEach(function (p) {
-      if (fromScatter) {
-        var angle = p.seed * Math.PI * 2;
-        var distance = spread * (0.35 + p.depth * 0.75);
-        p.x = p.targetX + Math.cos(angle) * distance + (p.depth - 0.5) * spread * 0.55;
-        p.y = p.targetY + Math.sin(angle) * distance + (p.seed - 0.5) * spread * 0.55;
-      }
-      p.startX = p.x; p.startY = p.y;
-      p.delay = reducedMotion ? 0 : p.seed * stagger;
+  function parseSettings(str) {
+    var map = {};
+    str.split(',').forEach(function (s) {
+      s = s.trim();
+      var parts = s.split(' ');
+      map[parts[0].replace(/['"]/g, '')] = parseFloat(parts[1]);
     });
-    gatherStart = now; gathering = true;
+    return map;
   }
+  var fromMap = parseSettings(fromFontVariationSettings);
+  var toMap = parseSettings(toFontVariationSettings);
+  var axes = Object.keys(fromMap).map(function (axis) {
+    return { axis: axis, fromValue: fromMap[axis], toValue: toMap[axis] !== undefined ? toMap[axis] : fromMap[axis] };
+  });
 
-  function drawParticle(p) {
-    var size = p.size;
-    ctx.fillStyle = p.color;
-    if (size <= 2.1) { ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size); return; }
-    ctx.beginPath(); ctx.arc(p.x, p.y, size / 2, 0, Math.PI * 2); ctx.fill();
-  }
-
-  function render(now) {
-    ctx.clearRect(0, 0, width, height);
-    if (glow && !reducedMotion) { ctx.shadowBlur = particleSize * 3; ctx.shadowColor = highlightColor; }
-    else ctx.shadowBlur = 0;
-
-    pointer.smoothX += (pointer.x - pointer.smoothX) * 0.18;
-    pointer.smoothY += (pointer.y - pointer.smoothY) * 0.18;
-
-    var complete = true;
-    particles.forEach(function (p) {
-      var baseX = p.targetX, baseY = p.targetY, progress = 1;
-      if (gathering) {
-        var local = (now - gatherStart - p.delay) / Math.max(1, reducedMotion ? 1 : gatherDuration);
-        progress = clamp(local, 0, 1);
-        var eased = easeOutCubic(progress);
-        baseX = p.startX + (p.targetX - p.startX) * eased;
-        baseY = p.startY + (p.targetY - p.startY) * eased;
-        if (progress < 1) complete = false;
-      } else if (!reducedMotion && idleDrift > 0) {
-        var driftTime = now * 0.001;
-        baseX += Math.sin(driftTime * 0.9 + p.seed * 10) * idleDrift * p.depth;
-        baseY += Math.cos(driftTime * 0.75 + p.depth * 10) * idleDrift * p.depth;
-      }
-      if (pointer.active && !reducedMotion && pointerRepel > 0 && repelRadius > 0) {
-        var dx = baseX - pointer.smoothX, dy = baseY - pointer.smoothY;
-        var distance = Math.hypot(dx, dy);
-        if (distance > 0 && distance < repelRadius) {
-          var force = Math.pow(1 - distance / repelRadius, 2) * pointerRepel;
-          baseX += (dx / distance) * force;
-          baseY += (dy / distance) * force;
-        }
-      }
-      var follow = reducedMotion ? 1 : 0.22;
-      p.x += (baseX - p.x) * follow;
-      p.y += (baseY - p.y) * follow;
-      ctx.globalAlpha = clamp(0.35 + progress * 0.65, 0, 1);
-      drawParticle(p);
+  // ── render label as per-letter spans (words nowrap, nbsp separators) ──
+  var letterEls = [];
+  var letterIndex = 0;
+  var rootSpan = document.createElement('span');
+  rootSpan.className = 'variable-proximity';   // PITFALL: without this class the Sofia Sans rule never applies
+  ctn.appendChild(rootSpan);
+  var words = label.split(' ');
+  words.forEach(function (word, wordIndex) {
+    var wspan = document.createElement('span');
+    wspan.style.whiteSpace = 'nowrap';
+    word.split('').forEach(function (ch) {
+      var l = document.createElement('span');
+      l.setAttribute('aria-hidden', 'true');
+      l.textContent = ch;
+      wspan.appendChild(l);
+      letterEls[letterIndex++] = l;
     });
+    rootSpan.appendChild(wspan);
+    if (wordIndex < words.length - 1) {
+      var sp = document.createElement('span');
+      sp.innerHTML = '&nbsp;';
+      rootSpan.appendChild(sp);
+    }
+  });
 
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-    if (gathering && complete) gathering = false;
-    animationFrame = window.requestAnimationFrame(render);
+  var mouseRef = { x: 0, y: 0 };
+  var lastPositionRef = { x: null, y: null };
+  var rectCache = null;
+
+  function updateRect() { rectCache = ctn.getBoundingClientRect(); }
+  updateRect();
+  window.addEventListener('resize', updateRect);
+
+  window.addEventListener('mousemove', function (ev) {
+    mouseRef.x = ev.clientX; mouseRef.y = ev.clientY;
+  }, { passive: true });
+  window.addEventListener('touchmove', function (ev) {
+    var touch = ev.touches[0];
+    if (touch) { mouseRef.x = touch.clientX; mouseRef.y = touch.clientY; }
+  }, { passive: true });
+
+  function calculateDistance(x1, y1, x2, y2) { return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); }
+
+  function calculateFalloff(distance) {
+    var norm = Math.min(Math.max(1 - distance / radius, 0), 1);
+    switch (falloff) {
+      case 'exponential': return norm * norm;
+      case 'gaussian': return Math.exp(-Math.pow(distance / (radius / 2), 2) / 2);
+      case 'linear':
+      default: return norm;
+    }
   }
 
-  function ensureRenderLoop() {
-    if (animationFrame === null) animationFrame = window.requestAnimationFrame(render);
-  }
+  function loop() {
+    requestAnimationFrame(loop);
+    var x = mouseRef.x, y = mouseRef.y;
+    if (lastPositionRef.x === x && lastPositionRef.y === y) return;
+    lastPositionRef.x = x; lastPositionRef.y = y;
+    if (!rectCache) return;
 
-  function sampleText() {
-    var currentBuild = ++buildId;
-    var rect = container.getBoundingClientRect();
-    width = Math.floor(rect.width); height = Math.floor(rect.height);
-    if (width <= 0 || height <= 0) return;
+    letterEls.forEach(function (letterEl) {
+      if (!letterEl) return;
+      var rect = letterEl.getBoundingClientRect();
+      var letterCenterX = rect.left + rect.width / 2 - rectCache.left;
+      var letterCenterY = rect.top + rect.height / 2 - rectCache.top;
 
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.max(1, Math.floor(width * dpr));
-    canvas.height = Math.max(1, Math.floor(height * dpr));
-    canvas.style.width = '100%'; canvas.style.height = '100%';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var distance = calculateDistance(x, y, letterCenterX, letterCenterY);
 
-    var computed = window.getComputedStyle(container);
-    var resolvedFamily = fontFamily === 'inherit' ? computed.fontFamily || 'sans-serif' : fontFamily;
-    var resolvedSize = resolveFontSize(fontSize, container, fontWeight, resolvedFamily);
-    var font = fontWeight + ' ' + resolvedSize + 'px ' + resolvedFamily;
-
-    waitForFonts(font).then(function () {
-      if (currentBuild !== buildId) return;
-      var offscreen = document.createElement('canvas');
-      var offCtx = offscreen.getContext('2d', { willReadFrequently: true });
-      if (!offCtx) return;
-
-      var content = TEXT || ' ';
-      var maxTextWidth = width * 0.92;
-      offCtx.font = font;
-      var metrics = offCtx.measureText(content);
-      var measuredWidth = Math.max(1, metrics.width);
-      if (measuredWidth > maxTextWidth) {
-        resolvedSize = Math.max(18, resolvedSize * (maxTextWidth / measuredWidth));
-        font = fontWeight + ' ' + resolvedSize + 'px ' + resolvedFamily;
-        waitForFonts(font).then(function () {
-          if (currentBuild !== buildId) return;
-          offCtx.font = font;
-          metrics = offCtx.measureText(content);
-          buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild);
-        });
+      if (distance >= radius) {
+        letterEl.style.fontVariationSettings = fromFontVariationSettings;
         return;
       }
-      buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild);
+
+      var falloffValue = calculateFalloff(distance);
+      letterEl.style.fontVariationSettings = axes.map(function (a) {
+        var interpolatedValue = a.fromValue + (a.toValue - a.fromValue) * falloffValue;
+        return "'" + a.axis + "' " + interpolatedValue;
+      }).join(', ');
     });
   }
-
-  function buildTargets(offscreen, offCtx, metrics, content, resolvedSize, currentBuild) {
-    var left = Math.ceil(metrics.actualBoundingBoxLeft || 0);
-    var right = Math.ceil(metrics.actualBoundingBoxRight || metrics.width);
-    var ascent = Math.ceil(metrics.actualBoundingBoxAscent || resolvedSize * 0.78);
-    var descent = Math.ceil(metrics.actualBoundingBoxDescent || resolvedSize * 0.22);
-    var padding = Math.max(12, Math.ceil(resolvedSize * 0.08));
-    var textWidth = Math.max(1, left + right);
-    var textHeight = Math.max(1, ascent + descent);
-
-    offscreen.width = textWidth + padding * 2;
-    offscreen.height = textHeight + padding * 2;
-    offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
-    offCtx.font = fontWeight + ' ' + resolvedSize + 'px ' + (fontFamily === 'inherit' ? (window.getComputedStyle(container).fontFamily || 'sans-serif') : fontFamily);
-    offCtx.textAlign = 'left'; offCtx.textBaseline = 'alphabetic';
-    offCtx.fillStyle = '#ffffff';
-    offCtx.fillText(content, padding - left, padding + ascent);
-
-    var imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
-    var targets = [];
-    var step = Math.max(2, Math.floor(density));
-    for (var y = 0; y < offscreen.height; y += step) {
-      for (var x = 0; x < offscreen.width; x += step) {
-        var alpha = imageData.data[(y * offscreen.width + x) * 4 + 3];
-        if (alpha > 40) {
-          targets.push({ x: width / 2 - offscreen.width / 2 + x, y: height / 2 - offscreen.height / 2 + y, alpha: alpha / 255 });
-        }
-      }
-    }
-
-    var maxParticles = Math.max(900, Math.min(5200, Math.floor((width * height) / 90)));
-    var stride = Math.max(1, Math.ceil(targets.length / maxParticles));
-    var baseRgb = hexToRgb(color);
-    var highlightRgb = hexToRgb(highlightColor);
-    var selected = targets.filter(function (_, index) { return index % stride === 0; });
-
-    particles = selected.map(function (target, index) {
-      var seed = ((index * 9301 + 49297) % 233280) / 233280;
-      var depth = 0.45 + (((index * 233 + 97) % 1000) / 1000) * 0.9;
-      var blend = baseRgb && highlightRgb ? clamp(target.x / Math.max(1, width) + (seed - 0.5) * 0.35, 0, 1) : 0;
-      var particleColor = baseRgb && highlightRgb ? rgbToCss(mixRgb(baseRgb, highlightRgb, blend)) : color;
-      var angle = seed * Math.PI * 2;
-      var distance = (reducedMotion ? 0 : scatter) * (0.35 + depth * 0.75);
-      var startX = target.x + Math.cos(angle) * distance + (seed - 0.5) * scatter * 0.45;
-      var startY = target.y + Math.sin(angle) * distance + (depth - 0.9) * scatter * 0.45;
-      return {
-        x: reducedMotion ? target.x : startX,
-        y: reducedMotion ? target.y : startY,
-        startX: startX, startY: startY,
-        targetX: target.x, targetY: target.y,
-        size: Math.max(0.6, particleSize * (0.75 + target.alpha * 0.45)),
-        color: particleColor, seed: seed, depth: depth, delay: seed * stagger
-      };
-    });
-
-    pointer.x = width / 2; pointer.y = height / 2;
-    pointer.smoothX = pointer.x; pointer.smoothY = pointer.y;
-
-    if (reducedMotion) {
-      particles.forEach(function (p) {
-        p.x = p.targetX; p.y = p.targetY;
-        p.startX = p.targetX; p.startY = p.targetY; p.delay = 0;
-      });
-      gathering = false;
-    } else startGather(false);
-    ensureRenderLoop();
-  }
-
-  function queueSample() {
-    if (resizeFrame) window.cancelAnimationFrame(resizeFrame);
-    resizeFrame = window.requestAnimationFrame(sampleText);
-  }
-
-  function handlePointerMove(e) {
-    var rect = canvas.getBoundingClientRect();
-    pointer.x = e.clientX - rect.left;
-    pointer.y = e.clientY - rect.top;
-    pointer.active = true;
-  }
-  function handlePointerLeave() { pointer.active = false; }
-  function handlePointerEnter(e) {
-    handlePointerMove(e);
-    if (trigger === 'hover') startGather(true);
-  }
-  function handleClick() { if (trigger === 'click') startGather(true); }
-
-  var reduceMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-  var handleReduceMotionChange = function (e) { reducedMotion = e.matches; sampleText(); };
-  if (reduceMotionQuery && reduceMotionQuery.addEventListener) reduceMotionQuery.addEventListener('change', handleReduceMotionChange);
-
-  canvas.addEventListener('pointerenter', handlePointerEnter);
-  canvas.addEventListener('pointermove', handlePointerMove);
-  canvas.addEventListener('pointerleave', handlePointerLeave);
-  canvas.addEventListener('click', handleClick);
-
-  var resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(queueSample) : null;
-  if (resizeObserver) resizeObserver.observe(container);
-  sampleText();
+  requestAnimationFrame(loop);
 })();
+
 </script>
 
 
