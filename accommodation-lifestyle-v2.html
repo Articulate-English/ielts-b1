@@ -58,7 +58,7 @@ body::after { content: ''; position: fixed; inset: 0; z-index: 9999; pointer-eve
 .slide:not(.active) * { visibility: hidden !important; }
 
 /* CONTENT */
-.content { position: relative; z-index: 1; width: min(94vw, 1400px); max-width: 94vw; background: rgba(var(--bg-deep-rgb),.90); border: 1px solid rgba(var(--accent-rgb),.55); border-left: 3px solid var(--accent); box-shadow: var(--glow); border-radius: 16px; padding: 2em 2.5em; backdrop-filter: blur(10px); margin: 0 0 10vh 0; }
+.content { position: relative; z-index: 1; width: min(94vw, 1400px); max-width: 94vw; background: rgba(var(--bg-deep-rgb),.72); border: 1px solid rgba(var(--accent-rgb),.55); border-left: 3px solid var(--accent); box-shadow: var(--glow); border-radius: 16px; padding: 2em 2.5em; backdrop-filter: blur(10px); margin: 0 0 10vh 0; }
 @media (min-width: 1600px) { .content { max-width: 90vw; width: min(90vw, 1600px); } }
 @media (max-width: 768px) { .content { max-width: 96vw; padding: 1.4em 1.6em; } }
 
@@ -539,8 +539,8 @@ function initVocabTooltips() {
 }
 initVocabTooltips();
 
-function revealAnswer(btn) {
-  var answer = btn.nextElementSibling;
+function toggleAnswer(id, btn) {
+  var answer = document.getElementById(id);
   if (!answer || !answer.classList.contains('model-answer')) return;
   if (answer.classList.contains('hidden-answer')) {
     answer.classList.remove('hidden-answer');
