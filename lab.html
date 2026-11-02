@@ -90,7 +90,7 @@ for(let c=0;c<3;c++){
   }
   plane.appendChild(col);
 }
-const wrap=document.getElementById('wrap');
+const planeEl=document.getElementById('plane');
 const params=['persp','rx','ry','rz','pw','ph','tw','ta','rg','cg','br','dur','sat','ox','oy','oz'];
 function upd(){
   const v={};
@@ -100,23 +100,27 @@ function upd(){
     v[id]=val;
     document.getElementById('v-'+id).textContent=val;
   });
-  const s=wrap.style;
-  s.setProperty('--persp', v.persp+'px');
-  s.setProperty('--rx', v.rx+'deg');
-  s.setProperty('--ry', v.ry+'deg');
-  s.setProperty('--rz', v.rz+'deg');
-  s.setProperty('--pw', v.pw+'%');
-  s.setProperty('--ph', v.ph+'%');
-  s.setProperty('--tw', v.tw+'px');
-  s.setProperty('--ta', v.ta);
-  s.setProperty('--rg', v.rg+'px');
-  s.setProperty('--cg', v.cg+'px');
-  s.setProperty('--br', v.br+'px');
-  s.setProperty('--dur', v.dur+'s');
-  s.setProperty('--sat', v.sat);
-  s.setProperty('--ox', v.ox+'px');
-  s.setProperty('--oy', v.oy+'px');
-  s.setProperty('--oz', v.oz+'px');
+  const root=document.documentElement.style;
+  root.setProperty('--persp', v.persp+'px');
+  root.setProperty('--rx', v.rx+'deg');
+  root.setProperty('--ry', v.ry+'deg');
+  root.setProperty('--rz', v.rz+'deg');
+  root.setProperty('--pw', v.pw+'%');
+  root.setProperty('--ph', v.ph+'%');
+  root.setProperty('--tw', v.tw+'px');
+  root.setProperty('--ta', v.ta);
+  root.setProperty('--rg', v.rg+'px');
+  root.setProperty('--cg', v.cg+'px');
+  root.setProperty('--br', v.br+'px');
+  root.setProperty('--sat', v.sat);
+  root.setProperty('--ox', v.ox+'px');
+  root.setProperty('--oy', v.oy+'px');
+  root.setProperty('--oz', v.oz+'px');
+  const dur=v.dur+'s';
+  root.setProperty('--dur', dur);
+  planeEl.querySelectorAll('.tt-col').forEach(col=>{ col.style.animationDuration=dur; });
+  planeEl.style.transform='rotateX('+v.rx+'deg) rotateY('+v.ry+'deg) rotateZ('+v.rz+'deg) translateX('+v.ox+'px) translateY('+v.oy+'px) translateZ('+v.oz+'px)';
+  document.getElementById('wrap').style.perspective=v.persp+'px';
 }
 params.forEach(id=>document.getElementById(id).addEventListener('input',upd));
 upd();
