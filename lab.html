@@ -124,7 +124,7 @@ function upd(){
   planeEl.style.transform='rotateX('+v.rx+'deg) rotateY('+v.ry+'deg) rotateZ('+v.rz+'deg) translateX('+v.ox+'px) translateY('+v.oy+'px) translateZ('+v.oz+'px)';
   document.getElementById('wrap').style.perspective=v.persp+'px';
 }
-params.forEach(id=>document.getElementById(id).addEventListener('input',upd));
+params.forEach(id=>{const el=document.getElementById(id); el.addEventListener('input',upd); el.addEventListener('change',upd);});
 upd();
 
 // Rising Ink title
