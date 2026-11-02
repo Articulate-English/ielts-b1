@@ -25,6 +25,7 @@ main{flex:1 1 auto;display:flex;min-height:0}
 .tt-col:nth-child(2){animation-direction:reverse}
 .tt-tile{position:relative;width:220px;aspect-ratio:1;border-radius:12px;overflow:hidden;flex-shrink:0;transform:scale(1);transform-origin:center}
 .tt-tile img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1)}
+.tt-tile span{position:absolute;left:8px;bottom:8px;font-size:0.85rem;font-weight:600;padding:4px 10px;border-radius:8px;background:rgba(15,23,42,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.18);color:#fff}
 @keyframes tt-scroll{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
 .title{position:absolute;top:16px;left:20px;z-index:5;font-family:'Montserrat',sans-serif;font-weight:900;font-size:clamp(1.4rem,3vw,2.2rem);background:linear-gradient(135deg,#fbbf24,#f472b6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;pointer-events:none}
 .lil-gui{--background-color:#0d0d1a;--text-color:#e6e2f5;--title-background-color:#141428;--title-text-color:#f4f1ea;--widget-color:#4c1d95;--hover-color:#6d28d9;--focus-color:#7c3aed;--number-color:#ff6ec7;--string-color:#a5f3c8;--font-size:12px;--input-font-size:12px;--padding:5px;--spacing:5px;--widget-height:18px;--slider-knob-width:6px;--widget-border-radius:9px;--name-width:42%}
@@ -62,6 +63,8 @@ const imgs = [
  "https://images.pexels.com/photos/7149129/pexels-photo-7149129.jpeg?auto=compress&cs=tinysrgb&w=640",
  "https://images.pexels.com/photos/25596879/pexels-photo-25596879.jpeg?auto=compress&cs=tinysrgb&w=640"
 ];
+const names = ["Accommodation","Books","Daily Routine","Education","Environment","Family","Festivals","Food","Friends","Health","Hobbies","Languages","Mobile Phones","Movies","Music","Newspapers","Outdoor","Parties","Pets","Photography"];
+
 const plane=document.getElementById('plane');
 const wrap=document.getElementById('wrap');
 for(let c=0;c<3;c++){
@@ -69,12 +72,16 @@ for(let c=0;c<3;c++){
   for(let i=0;i<10;i++){
     const t=document.createElement('div'); t.className='tt-tile';
     const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
-    t.appendChild(img); col.appendChild(t);
+    t.appendChild(img);
+    const sp=document.createElement('span'); sp.textContent=names[(c*3+i)%names.length]; t.appendChild(sp);
+    col.appendChild(t);
   }
   for(let i=0;i<10;i++){
     const t=document.createElement('div'); t.className='tt-tile';
     const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
-    t.appendChild(img); col.appendChild(t);
+    t.appendChild(img);
+    const sp=document.createElement('span'); sp.textContent=names[(c*3+i)%names.length]; t.appendChild(sp);
+    col.appendChild(t);
   }
   plane.appendChild(col);
 }
