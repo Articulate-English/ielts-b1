@@ -83,10 +83,10 @@ function apply(){
   wrap.style.perspective=P.persp+'px';
   plane.style.width=P.pw+'%';
   plane.style.height=P.ph+'%';
-  plane.style.gap=P.cg+'px';
+  plane.style.gap=(P.cg*P.scale)+'px';
   plane.style.transform='rotateX('+P.rx+'deg) rotateY('+P.ry+'deg) rotateZ('+P.rz+'deg) translateX('+P.ox+'px) translateY('+P.oy+'px) translateZ('+P.oz+'px)';
   const dur=P.dur+'s';
-  plane.querySelectorAll('.tt-col').forEach(col=>{col.style.gap=P.rg+'px';col.style.animationDuration=dur;});
+  plane.querySelectorAll('.tt-col').forEach(col=>{col.style.gap=(P.rg*P.scale)+'px';col.style.animationDuration=dur;});
   plane.querySelectorAll('.tt-tile').forEach(t=>{
     t.style.width=P.tw+'px'; t.style.aspectRatio=P.ta; t.style.borderRadius=P.br+'px';
     t.style.transform='scale('+P.scale+')';
