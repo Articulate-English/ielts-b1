@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'self'">
+<title>English Speaking Practice - Part 1</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@1..1000&display=swap" rel="stylesheet">
+<style>
+:root { --hue: 200; --bg: #0a1020; --card-bg: rgba(15, 23, 42, 0.85); --border: rgba(251, 191, 36, 0.4); --text: #f1f5f9; --text-muted: #94a3b8; --accent: #fbbf24; --cyan: #22d3ee; --lime: #a3e635; --rose: #fb7185; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; background-image: radial-gradient(ellipse at 20% 50%, rgba(34, 211, 238, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(251, 191, 36, 0.06) 0%, transparent 50%); }
+.header { text-align: center; padding: 3em 1em 2em; border-bottom: 1px solid rgba(251, 191, 36, 0.15); margin-bottom: 2em; }
+.header h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: clamp(2rem, 5vw, 3.5rem); background: linear-gradient(135deg, #fbbf24, #f472b6, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.4em; }
+.header p, .header .header-desc { color: var(--text-muted); font-size: 1.05rem; max-width: 560px; margin: 1.4em auto 0; line-height: 1.9; letter-spacing: 0.02em; font-weight: 400; }
+.header .header-desc { position: relative; padding: 0 1em; }
+.header .header-desc::before, .header .header-desc::after { content: ''; display: block; width: 56px; height: 1px; margin: 0 auto; background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent); }
+.header .header-desc::before { margin-bottom: 1em; }
+.header .header-desc::after { margin-top: 1em; }
+
+/* REACT BITS PORT: ParticleText title */
+.header { position: relative; z-index: 1; }
+.container { position: relative; z-index: 1; }
+
+/* REACT BITS PORT: SoftAurora background (WebGL2, z-0) */
+#softAurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#softAurora canvas { display: block; width: 100%; height: 100%; }
+
+/* REACT BITS PORT: VariableProximity title (Sofia Sans, white→indigo gradient) */
+#varprox { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 240px; min-height: 200px; pointer-events: none; overflow: hidden; margin-bottom: 0.2em; }
+#varprox .variable-proximity {
+  font-family: 'Sofia Sans', sans-serif;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  font-weight: 300; letter-spacing: .02em; line-height: 1.2; text-align: center;
+  background: linear-gradient(90deg, #ffffff, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  user-select: none; -webkit-user-select: none;
+  max-width: 94vw;
+}
+#varprox .variable-proximity span { display: inline-block; white-space: nowrap; }
+@media (max-width: 768px) { #varprox { height: 150px; min-height: 130px; } }
+.container { max-width: min(94vw, 1400px); margin: 0 auto; padding: 0 1.5em 3em; }
+.section-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin: 2em 0 1em; padding-bottom: 0.5em; border-bottom: 1px solid rgba(251, 191, 36, 0.2); }
+.deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5em; }
+.deck-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; transition: all 0.3s ease; cursor: pointer; text-decoration: none; color: inherit; display: flex; flex-direction: column; position: relative; perspective: 700px; transform-style: preserve-3d; will-change: transform; }
+.deck-card:hover { transform: perspective(700px) rotateX(var(--rotate-y, 0deg)) rotateY(var(--rotate-x, 0deg)) translateY(-4px); border-color: var(--accent); box-shadow: 0 0 30px rgba(251, 191, 36, 0.15), 0 20px 40px rgba(0, 0, 0, 0.3); }
+.deck-card.completed { border-color: var(--lime); box-shadow: 0 0 20px rgba(163, 230, 53, 0.15); }
+/* REACT BITS ProfileCard port: behind glow, inner gradient, glare */
+.deck-card { --pointer-x: 50%; --pointer-y: 50%; --pointer-from-center: 0; --pointer-from-top: 0.5; --pointer-from-left: 0.5; --background-x: 50%; --background-y: 50%; --rotate-x: 0deg; --rotate-y: 0deg; }
+.deck-card::before {
+  content: ''; position: absolute; inset: -20%; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(125, 190, 255, 0.45) 0%, transparent var(--behind-glow-size, 45%));
+  filter: blur(30px); opacity: 0; transition: opacity 200ms ease;
+}
+.deck-card.active::before { opacity: 0.75; }
+.deck-card-image, .deck-card-body { position: relative; z-index: 1; }
+.deck-card::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: overlay;
+  background: linear-gradient(145deg, rgba(96, 73, 110, 0.55) 0%, rgba(113, 196, 255, 0.27) 100%), radial-gradient(farthest-corner circle at var(--pointer-x) var(--pointer-y), hsl(248, 25%, 80%) 12%, hsla(207, 40%, 30%, 0.8) 90%);
+  opacity: 0; transition: opacity 200ms ease;
+}
+.deck-card.active::after { opacity: 0.5; }
+.deck-card-image { width: 100%; height: 160px; overflow: hidden; position: relative; border-radius: 15px 15px 0 0; }
+.deck-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.deck-card-body { padding: 1.2em 1.4em 1.4em; flex: 1; display: flex; flex-direction: column; border-radius: 0 0 15px 15px; }
+.deck-card h3 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.15rem; margin-bottom: 0.4em; line-height: 1.3; }
+.deck-card p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; flex: 1; }
+.deck-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1em; padding-top: 0.8em; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.deck-card-progress { font-size: 0.78rem; color: var(--text-muted); }
+.deck-card-progress.done { color: var(--lime); }
+.completed-badge { font-size: 0.7rem; padding: 3px 10px; border-radius: 12px; background: rgba(163, 230, 53, 0.2); color: var(--lime); font-weight: 600; }
+@media (max-width: 768px) { .deck-grid { grid-template-columns: 1fr; } .header { padding: 2em 1em 1.5em; } }
+</style>
+<style>.part-title{font-family:Montserrat,sans-serif;font-weight:900;font-size:clamp(1.6rem,4vw,2.6rem);text-align:center;margin:0.4em 0;background:linear-gradient(135deg,#fbbf24,#f472b6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}</style></head>
+<body>
+
+<div id="softAurora" aria-hidden="true"></div>
+
+<header class="header">
+  <h1 class="part-title">English Speaking Practice - Part 1</h1>
+  <p class="header-desc">Master all three parts of the English speaking test with model answers you can reveal when ready. Track your progress as you practice.</p>
+</header>
+
+<div class="container">
+
+  <h2 class="section-title">B1 Speaking Topics</h2>
+  <div class="deck-grid" id="deckGrid">
+    <a class="deck-card" href="accommodation-lifestyle-v2.html" data-deck="accommodation-lifestyle" aria-label="Accommodation Lifestyle">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/7587828/pexels-photo-7587828.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Accommodation Lifestyle</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-accommodation-lifestyle">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-accommodation-lifestyle">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="books-reading-v2.html" data-deck="books-reading" aria-label="Books Reading">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/990432/pexels-photo-990432.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Books Reading</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-books-reading">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-books-reading">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="daily-routine-v2.html" data-deck="daily-routine" aria-label="Daily Routine">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/5710564/pexels-photo-5710564.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Daily Routine</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-daily-routine">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-daily-routine">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="education-learning-v2.html" data-deck="education-learning" aria-label="Education Learning">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/8199602/pexels-photo-8199602.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Education Learning</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-education-learning">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-education-learning">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="environment-nature-v2.html" data-deck="environment-nature" aria-label="Environment Nature">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/34985169/pexels-photo-34985169.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Environment Nature</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-environment-nature">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-environment-nature">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="family-childhood-v2.html" data-deck="family-childhood" aria-label="Family Childhood">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/3912425/pexels-photo-3912425.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Family Childhood</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-family-childhood">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-family-childhood">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="festivals-celebrations-v2.html" data-deck="festivals-celebrations" aria-label="Festivals Celebrations">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/10034809/pexels-photo-10034809.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Festivals Celebrations</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-festivals-celebrations">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-festivals-celebrations">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="food-cooking-v2.html" data-deck="food-cooking" aria-label="Food Cooking">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/4253300/pexels-photo-4253300.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Food Cooking</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-food-cooking">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-food-cooking">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="friends-family-v2.html" data-deck="friends-family" aria-label="Friends Family">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/7149129/pexels-photo-7149129.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Friends Family</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-friends-family">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-friends-family">Done</span>
+        </div>
+      </div>
+    </a>
+    <a class="deck-card" href="health-fitness-v2.html" data-deck="health-fitness" aria-label="Health Fitness">
+      <div class="deck-card-image">
+        <img src="https://images.pexels.com/photos/25596879/pexels-photo-25596879.jpeg?auto=compress&cs=tinysrgb&w=640" alt="" loading="lazy" aria-hidden="true">      </div>
+      <div class="deck-card-body">
+        <h3>Health Fitness</h3>
+        <p>English Speaking Practice (B1) deck covering Part 1, Part 2 cue card, and Part 3 discussion.</p>
+        <div class="deck-card-footer">
+          <span class="deck-card-progress" id="progress-health-fitness">Not started</span>
+          <span class="completed-badge" style="display:none" id="done-health-fitness">Done</span>
+        </div>
+      </div>
+    </a>
+  
+
+
+
+</div>
+
+<script>
+const decks = ["accommodation-lifestyle", "books-reading", "daily-routine", "education-learning", "environment-nature", "family-childhood", "festivals-celebrations", "food-cooking", "friends-family", "health-fitness"];
+
+function loadProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem('ielts-speaking-progress') || '{}');
+    decks.forEach(id => {
+      if (data[id] && data[id].completed) {
+        const card = document.querySelector(`a[data-deck="${id}"]`);
+        if (card) {
+          card.classList.add('completed');
+          const prog = document.getElementById(`progress-${id}`);
+          const done = document.getElementById(`done-${id}`);
+          if (prog) { prog.textContent = 'Completed'; prog.classList.add('done'); }
+          if (done) done.style.display = 'inline-block';
+        }
+      }
+    });
+  } catch(e) {}
+}
+loadProgress();
+</script>
+
+
+
+
+
+
+
+
+
+<div class="part-nav" style="text-align:center;padding:2em 1em;gap:1em;display:flex;justify-content:center;flex-wrap:wrap;"><a href="part1.html" style="color:#fbbf24;text-decoration:none;padding:0.5em 1em;border:1px solid rgba(251,191,36,0.4);border-radius:8px;">Part 1</a> <a href="part2.html" style="color:#fbbf24;text-decoration:none;padding:0.5em 1em;border:1px solid rgba(251,191,36,0.4);border-radius:8px;">Part 2</a> <a href="part3.html" style="color:#fbbf24;text-decoration:none;padding:0.5em 1em;border:1px solid rgba(251,191,36,0.4);border-radius:8px;">Part 3</a></div></body>
+</html>
