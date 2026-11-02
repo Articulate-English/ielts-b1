@@ -76,6 +76,7 @@ const imgs = [
  "https://images.pexels.com/photos/25596879/pexels-photo-25596879.jpeg?auto=compress&cs=tinysrgb&w=640"
 ];
 const plane=document.getElementById('plane');
+const wrap=document.getElementById('wrap');
 for(let c=0;c<3;c++){
   const col=document.createElement('div'); col.className='tt-col';
   for(let i=0;i<10;i++){
@@ -83,7 +84,6 @@ for(let c=0;c<3;c++){
     const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
     t.appendChild(img); col.appendChild(t);
   }
-  // duplicate for loop
   for(let i=0;i<10;i++){
     const t=document.createElement('div'); t.className='tt-tile';
     const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
@@ -91,48 +91,33 @@ for(let c=0;c<3;c++){
   }
   plane.appendChild(col);
 }
-const planeEl=document.getElementById('plane');
 const params=['persp','rx','ry','rz','pw','ph','tw','ta','rg','cg','br','dur','sat','ox','oy','oz','scale'];
+function V(id){ return document.getElementById(id).value; }
 function upd(){
   const v={};
-  params.forEach(id=>{
-    const el=document.getElementById(id);
-    const val=el.value;
-    v[id]=val;
-    document.getElementById('v-'+id).textContent=val;
+  params.forEach(id=>{ v[id]=V(id); document.getElementById('v-'+id).textContent=v[id]; });
+  wrap.style.perspective = v.persp+'px';
+  plane.style.width = v.pw+'%';
+  plane.style.height = v.ph+'%';
+  plane.style.gap = v.cg+'px';
+  plane.style.transform = 'rotateX('+v.rx+'deg) rotateY('+v.ry+'deg) rotateZ('+v.rz+'deg) translateX('+v.ox+'px) translateY('+v.oy+'px) translateZ('+v.oz+'px)';
+  const dur = v.dur+'s';
+  plane.querySelectorAll('.tt-col').forEach(col=>{
+    col.style.gap = v.rg+'px';
+    col.style.animationDuration = dur;
   });
-  const root=document.documentElement.style;
-  root.setProperty('--persp', v.persp+'px');
-  root.setProperty('--rx', v.rx+'deg');
-  root.setProperty('--ry', v.ry+'deg');
-  root.setProperty('--rz', v.rz+'deg');
-  root.setProperty('--pw', v.pw+'%');
-  root.setProperty('--ph', v.ph+'%');
-  root.setProperty('--tw', v.tw+'px');
-  root.setProperty('--ta', v.ta);
-  root.setProperty('--rg', v.rg+'px');
-  root.setProperty('--cg', v.cg+'px');
-  root.setProperty('--br', v.br+'px');
-  root.setProperty('--sat', v.sat);
-  root.setProperty('--ox', v.ox+'px');
-  root.setProperty('--oy', v.oy+'px');
-  root.setProperty('--oz', v.oz+'px');
-  root.setProperty('--scale', v.scale);
-  const dur=v.dur+'s';
-  root.setProperty('--dur', dur);
-  planeEl.querySelectorAll('.tt-col').forEach(col=>{ col.style.animationDuration=dur; });
-  planeEl.style.transform='rotateX('+v.rx+'deg) rotateY('+v.ry+'deg) rotateZ('+v.rz+'deg) translateX('+v.ox+'px) translateY('+v.oy+'px) translateZ('+v.oz+'px)';
-  document.getElementById('wrap').style.perspective=v.persp+'px';
-  // direct tile sizing so the change is always visible
-  planeEl.querySelectorAll('.tt-tile').forEach(t=>{
-    t.style.width=v.tw+'px';
-    t.style.transform='scale('+v.scale+')';
+  plane.querySelectorAll('.tt-tile').forEach(t=>{
+    t.style.width = v.tw+'px';
+    t.style.aspectRatio = v.ta;
+    t.style.borderRadius = v.br+'px';
+    t.style.transform = 'scale('+v.scale+')';
+    const img=t.querySelector('img');
+    if(img) img.style.filter='saturate('+v.sat+')';
   });
 }
 params.forEach(id=>{const el=document.getElementById(id); el.addEventListener('input',upd); el.addEventListener('change',upd);});
 upd();
 
-// Rising Ink title
 const rt=document.getElementById('risingTitle');
 const text=rt.textContent;
 rt.textContent='';
