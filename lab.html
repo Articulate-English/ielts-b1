@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'unsafe-inline'; connect-src 'self'">
+<title>Tilted Tiles Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0a1020; --text:#f1f5f9; --muted:#94a3b8; --accent:#fbbf24; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+.lab { display:grid; grid-template-columns: 320px 1fr; gap:1em; padding:1em; min-height:100vh; }
+.controls { background:rgba(15,23,42,0.85); border:1px solid rgba(251,191,36,0.3); border-radius:12px; padding:1em; overflow-y:auto; max-height:100vh; }
+.controls h2 { color:var(--accent); margin-bottom:0.6em; font-family:'Montserrat',sans-serif; }
+.row { margin-bottom:0.8em; }
+.row label { display:block; font-size:0.8rem; color:var(--muted); margin-bottom:0.2em; }
+.row input[type=range] { width:100%; }
+.row .val { float:right; color:var(--accent); font-size:0.75rem; }
+.preview { position:relative; border:1px solid rgba(251,191,36,0.3); border-radius:12px; overflow:hidden; background:radial-gradient(ellipse 80% 60% at 20% 40%, rgba(34,211,238,0.18) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 80% 20%, rgba(251,191,36,0.14) 0%, transparent 60%); }
+.title { position:absolute; top:12px; left:16px; z-index:5; font-family:'Montserrat',sans-serif; font-weight:900; font-size:clamp(1.4rem,3vw,2.2rem); background:linear-gradient(135deg,#fbbf24,#f472b6,#22d3ee); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; pointer-events:none; }
+.tt-wrap { width:100%; height:100%; perspective:var(--persp,1600px); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.tt-plane { width:var(--pw,280%); height:var(--ph,260%); transform: rotateX(var(--rx,40deg)) rotateY(var(--ry,16deg)) rotateZ(var(--rz,-20deg)) translateX(var(--ox,-40px)) translateY(var(--oy,0px)) translateZ(var(--oz,0px)); transform-origin:center; display:flex; gap:var(--cg,8px); justify-content:center; }
+.tt-col { display:flex; flex-direction:column; gap:var(--rg,8px); animation: tt-scroll var(--dur,25s) linear infinite; }
+.tt-col:nth-child(2) { animation-direction: reverse; animation-delay: calc(var(--dur,25s) * -0.32); }
+.tt-col:nth-child(3) { animation-delay: calc(var(--dur,25s) * -0.64); }
+.tt-tile { position:relative; width:var(--tw,220px); aspect-ratio:var(--ta,1); border-radius:var(--br,12px); overflow:hidden; flex-shrink:0; }
+.tt-tile img { width:100%; height:100%; object-fit:cover; display:block; filter:saturate(var(--sat,1)); }
+@keyframes tt-scroll { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+/* Rising Ink title */
+.rising-title { display:inline-block; }
+.rising-title span { display:inline-block; transition: transform .2s ease; }
+</style>
+</head>
+<body>
+<div class="lab">
+  <div class="controls">
+    <h2>Tilted Tiles Lab</h2>
+    <div class="row"><label>perspective <span class="val" id="v-persp"></span></label><input type="range" id="persp" min="800" max="3000" value="1600"></div>
+    <div class="row"><label>rotateX <span class="val" id="v-rx"></span></label><input type="range" id="rx" min="0" max="70" value="40"></div>
+    <div class="row"><label>rotateY <span class="val" id="v-ry"></span></label><input type="range" id="ry" min="-40" max="40" value="16"></div>
+    <div class="row"><label>rotateZ <span class="val" id="v-rz"></span></label><input type="range" id="rz" min="-45" max="45" value="-20"></div>
+    <div class="row"><label>planeWidth % <span class="val" id="v-pw"></span></label><input type="range" id="pw" min="120" max="400" value="280"></div>
+    <div class="row"><label>planeHeight % <span class="val" id="v-ph"></span></label><input type="range" id="ph" min="120" max="400" value="260"></div>
+    <div class="row"><label>tileWidth px <span class="val" id="v-tw"></span></label><input type="range" id="tw" min="120" max="320" value="220"></div>
+    <div class="row"><label>tileAspect <span class="val" id="v-ta"></span></label><input type="range" id="ta" min="0.5" max="2" step="0.1" value="1"></div>
+    <div class="row"><label>rowGap px <span class="val" id="v-rg"></span></label><input type="range" id="rg" min="0" max="24" value="8"></div>
+    <div class="row"><label>columnGap px <span class="val" id="v-cg"></span></label><input type="range" id="cg" min="0" max="24" value="8"></div>
+    <div class="row"><label>borderRadius px <span class="val" id="v-br"></span></label><input type="range" id="br" min="0" max="24" value="12"></div>
+    <div class="row"><label>duration s <span class="val" id="v-dur"></span></label><input type="range" id="dur" min="8" max="60" value="25"></div>
+    <div class="row"><label>saturation <span class="val" id="v-sat"></span></label><input type="range" id="sat" min="0" max="2" step="0.1" value="1"></div>
+    <div class="row"><label>offsetX px <span class="val" id="v-ox"></span></label><input type="range" id="ox" min="-120" max="120" value="-40"></div>
+    <div class="row"><label>offsetY px <span class="val" id="v-oy"></span></label><input type="range" id="oy" min="-120" max="120" value="0"></div>
+    <div class="row"><label>offsetZ px <span class="val" id="v-oz"></span></label><input type="range" id="oz" min="-200" max="200" value="0"></div>
+    <p style="font-size:0.75rem;color:var(--muted);margin-top:1em;">Rising Ink title: move cursor over title.</p>
+  </div>
+  <div class="preview">
+    <div class="title rising-title" id="risingTitle">English Speaking Practice</div>
+    <div class="tt-wrap" id="wrap">
+      <div class="tt-plane" id="plane"></div>
+    </div>
+  </div>
+</div>
+<script>
+const imgs = [
+ "https://images.pexels.com/photos/7587828/pexels-photo-7587828.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/990432/pexels-photo-990432.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/5710564/pexels-photo-5710564.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/8199602/pexels-photo-8199602.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/34985169/pexels-photo-34985169.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/3912425/pexels-photo-3912425.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/10034809/pexels-photo-10034809.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/4253300/pexels-photo-4253300.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/7149129/pexels-photo-7149129.jpeg?auto=compress&cs=tinysrgb&w=640",
+ "https://images.pexels.com/photos/25596879/pexels-photo-25596879.jpeg?auto=compress&cs=tinysrgb&w=640"
+];
+const plane=document.getElementById('plane');
+for(let c=0;c<3;c++){
+  const col=document.createElement('div'); col.className='tt-col';
+  for(let i=0;i<10;i++){
+    const t=document.createElement('div'); t.className='tt-tile';
+    const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
+    t.appendChild(img); col.appendChild(t);
+  }
+  // duplicate for loop
+  for(let i=0;i<10;i++){
+    const t=document.createElement('div'); t.className='tt-tile';
+    const img=document.createElement('img'); img.src=imgs[(c*3+i)%imgs.length]; img.loading='lazy';
+    t.appendChild(img); col.appendChild(t);
+  }
+  plane.appendChild(col);
+}
+const wrap=document.getElementById('wrap');
+const params=['persp','rx','ry','rz','pw','ph','tw','ta','rg','cg','br','dur','sat','ox','oy','oz'];
+function upd(){
+  const v={};
+  params.forEach(id=>{
+    const el=document.getElementById(id);
+    const val=el.value;
+    v[id]=val;
+    document.getElementById('v-'+id).textContent=val;
+  });
+  const s=wrap.style;
+  s.setProperty('--persp', v.persp+'px');
+  s.setProperty('--rx', v.rx+'deg');
+  s.setProperty('--ry', v.ry+'deg');
+  s.setProperty('--rz', v.rz+'deg');
+  s.setProperty('--pw', v.pw+'%');
+  s.setProperty('--ph', v.ph+'%');
+  s.setProperty('--tw', v.tw+'px');
+  s.setProperty('--ta', v.ta);
+  s.setProperty('--rg', v.rg+'px');
+  s.setProperty('--cg', v.cg+'px');
+  s.setProperty('--br', v.br+'px');
+  s.setProperty('--dur', v.dur+'s');
+  s.setProperty('--sat', v.sat);
+  s.setProperty('--ox', v.ox+'px');
+  s.setProperty('--oy', v.oy+'px');
+  s.setProperty('--oz', v.oz+'px');
+}
+params.forEach(id=>document.getElementById(id).addEventListener('input',upd));
+upd();
+
+// Rising Ink title
+const rt=document.getElementById('risingTitle');
+const text=rt.textContent;
+rt.textContent='';
+text.split('').forEach(ch=>{
+  const sp=document.createElement('span');
+  sp.textContent=ch===' '?'\u00A0':ch;
+  rt.appendChild(sp);
+});
+document.addEventListener('mousemove', e=>{
+  const r=rt.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2;
+  const dx=(e.clientX-cx)/r.width, dy=(e.clientY-cy)/r.height;
+  rt.querySelectorAll('span').forEach((sp,i)=>{
+    const off=(i-text.length/2)*2;
+    sp.style.transform='translateZ('+( -Math.abs(dx*40+dy*20) + off*0.5 )+'px) translateY('+ (dy*6) +'px)';
+  });
+});
+</script>
+</body>
+</html>
+HTMLEOF
+echo done
